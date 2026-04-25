@@ -84,6 +84,30 @@ class MediaController extends Controller
         ]);
     }
 
+    public function transcription(MediaFile $media)
+    {
+        // Vérifier que c'est un audio
+        if ($media->kind !== 'audio') {
+            return response()->json([
+                'error' => [
+                    'code' => 'INVALID_KIND',
+                    'message' => 'Cette méthode est uniquement disponible pour les fichiers audio.',
+                ]
+            ], 400);
+        }
+
+        return response()->json([
+            'data' => [
+                'media_id' => $media->id,
+                'transcription_status' => $media->transcription_status,
+                'transcription_language' => $media->transcription_language,
+                'transcription_original' => $media->transcription_original,
+                'transcription_translated' => $media->transcription_translated,
+                'transcription_translated_at' => $media->transcription_translated_at,
+            ],
+        ]);
+    }
+
     private function extensionFromMime(string $mime): string
     {
         return match ($mime) {

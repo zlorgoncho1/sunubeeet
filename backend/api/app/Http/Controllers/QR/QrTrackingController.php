@@ -144,6 +144,84 @@ class QrTrackingController extends Controller
         return response()->json(['data' => $alertes]);
     }
 
+    /**
+     * F1.6 — Détail d'une alerte avec timeline publique
+     */
+    public function alerteDetail(Request $request, Alerte $alerte)
+    {
+        $phoneHash = $request->tracking_phone_hash; // injecté par ValidateTrackingToken
+
+        // Vérifier que ce numéro a accès à cette alerte
+        $hasAccess = PhoneTracking::where('phone_hash', $phoneHash)
+            ->where('alerte_id', $alerte->id)
+            ->where('verified', true)
+            ->where('expires_at', '>', now())
+            ->exists();
+
+        if (!$hasAccess) {
+            return response()->json([
+                'error' => [
+                    'code' => 'FORBIDDEN',
+                    'message' => 'Accès non autorisé à cette alerte.',
+                ]
+            ], 403);
+        }
+
+        $alerte->load(['incident', 'trackingEvents' => function($q) use ($alerte) {
+            $q->where('target_type', 'alerte')
+              ->where('target_id', $alerte->id)
+              ->orderBy('created_at', 'desc');
+        }]);
+
+        // Timeline publique (pas d'infos sensibles)
+        $timeline = $alerte->trackingEvents->map(function($event) {
+            $step = match($event->action) {
+                'alerte.created' => 'Reçue',
+                'alerte.validated' => 'Validée',
+                'mission.created' => 'Agent assigné',
+                'mission.accepted' => 'Agent a accepté',
+                'mission.on_route' => 'Agent en route',
+                'mission.on_site' => 'Agent sur place',
+                'mission.completed' => 'Mission terminée',
+                default => ucfirst(str_replace(['alerte.', 'mission.'], '', $event->action)),
+            };
+
+            return [
+                'step' => $step,
+                'timestamp' => $event->created_at->format('H:i'),
+            ];
+        })->values();
+
+        $incidentSummary = null;
+        if ($alerte->incident) {
+            $missionStatus = $alerte->incident->missions()
+                ->whereIn('status', ['assigned', 'accepted', 'on_route', 'on_site', 'completed'])
+                ->orderBy('created_at', 'desc')
+                ->first();
+
+            $incidentSummary = [
+                'reference' => $alerte->incident->reference,
+                'status' => $alerte->incident->status,
+                'mission_status' => $missionStatus ? $missionStatus->status : null,
+            ];
+        }
+
+        return response()->json([
+            'data' => [
+                'alerte' => [
+                    'id' => $alerte->id,
+                    'reference' => $alerte->reference,
+                    'category' => $alerte->category,
+                    'status' => $alerte->status,
+                    'created_at' => $alerte->created_at,
+                    'updated_at' => $alerte->updated_at,
+                ],
+                'incident_summary' => $incidentSummary,
+                'timeline_public' => $timeline,
+            ],
+        ]);
+    }
+
     private function maskPhone(string $phone): string
     {
         // +221771234567 → +221 77 *** ** 67
