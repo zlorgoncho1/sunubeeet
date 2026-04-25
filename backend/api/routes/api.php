@@ -142,8 +142,9 @@ Route::prefix('v1')->group(function () {
                 Route::post('/',                   [\App\Http\Controllers\Admin\QrCodeController::class, 'store']);
                 Route::post('batch',               [\App\Http\Controllers\Admin\QrCodeController::class, 'batch']);
                 Route::patch('{qrCode}',           [\App\Http\Controllers\Admin\QrCodeController::class, 'update']);
-                Route::post('{qrCode}/rotate',     [\App\Http\Controllers\Admin\QrCodeController::class, 'rotate']);
+                Route::post('{qrCode}/activate',   [\App\Http\Controllers\Admin\QrCodeController::class, 'activate']);
                 Route::post('{qrCode}/deactivate', [\App\Http\Controllers\Admin\QrCodeController::class, 'deactivate']);
+                Route::post('{qrCode}/rotate',     [\App\Http\Controllers\Admin\QrCodeController::class, 'rotate']);
             });
 
             // Zones

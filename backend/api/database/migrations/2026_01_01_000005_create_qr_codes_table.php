@@ -20,8 +20,11 @@ return new class extends Migration
             $table->uuid('site_id')->nullable();
             $table->foreign('site_id')->references('id')->on('sites')->onDelete('set null');
             $table->text('description')->nullable();
-            $table->boolean('is_active')->default(true);
-            $table->timestamp('expires_at')->nullable();
+            $table->boolean('is_active')->default(false); // invalide par défaut, activation explicite requise
+            $table->timestamp('activated_at')->nullable();
+            $table->uuid('activated_by')->nullable();
+            $table->foreign('activated_by')->references('id')->on('users')->onDelete('set null');
+            $table->timestamp('expires_at')->nullable(); // date de fin de l'événement
             $table->integer('scan_count')->default(0);
             $table->timestamp('last_scanned_at')->nullable();
             $table->uuid('created_by')->nullable();

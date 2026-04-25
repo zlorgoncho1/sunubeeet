@@ -26,8 +26,16 @@ class QrScanController extends Controller
 
         $qr = QrCode::find($decoded['qr_id']);
 
-        if (! $qr || ! $qr->is_active) {
-            return response()->json(['message' => 'QR code inactif ou introuvable.'], 422);
+        if (! $qr) {
+            return response()->json(['message' => 'QR code introuvable.'], 422);
+        }
+
+        if (! $qr->is_active) {
+            return response()->json(['message' => 'Ce QR code n\'est pas encore activé.'], 422);
+        }
+
+        if ($qr->expires_at && $qr->expires_at->isPast()) {
+            return response()->json(['message' => 'Ce QR code a expiré. L\'événement est terminé.'], 422);
         }
 
         // Incrémenter le compteur de scans
