@@ -56,26 +56,45 @@ services:
 
   redis:
     image: redis:7-alpine
-    # Config alignée sur prod : ne pas crash si bgsave échoue (overcommit off
-    # sur certains hôtes), cap mémoire pour cohérence dev/prod.
+    # Config alignée sur prod : ne pas crash si bgsave échoue, cap mémoire,
+    # auth conditionnelle (active --requirepass si REDIS_PASSWORD ≠ "" / "null").
+    environment:
+      REDIS_PASSWORD: "${REDIS_PASSWORD:-}"
     command:
-      - "redis-server"
-      - "--maxmemory"
-      - "256mb"
-      - "--maxmemory-policy"
-      - "allkeys-lru"
-      - "--save"
-      - "60 1"
-      - "--stop-writes-on-bgsave-error"
-      - "no"
-      - "--loglevel"
-      - "warning"
+      - "sh"
+      - "-c"
+      - |
+        if [ -n "$$REDIS_PASSWORD" ] && [ "$$REDIS_PASSWORD" != "null" ]; then
+          echo "[redis] AUTH activée"
+          exec redis-server \
+            --maxmemory 256mb \
+            --maxmemory-policy allkeys-lru \
+            --save "60 1" \
+            --stop-writes-on-bgsave-error no \
+            --loglevel warning \
+            --requirepass "$$REDIS_PASSWORD"
+        else
+          echo "[redis] AUTH désactivée (REDIS_PASSWORD vide ou 'null')"
+          exec redis-server \
+            --maxmemory 256mb \
+            --maxmemory-policy allkeys-lru \
+            --save "60 1" \
+            --stop-writes-on-bgsave-error no \
+            --loglevel warning
+        fi
     volumes:
       - redis-data:/data
     ports:
       - "${REDIS_PORT:-6379}:6379"         # exposé pour RedisInsight
     healthcheck:
-      test:     ["CMD", "redis-cli", "ping"]
+      test:
+        - "CMD-SHELL"
+        - |
+          if [ -n "$$REDIS_PASSWORD" ] && [ "$$REDIS_PASSWORD" != "null" ]; then
+            redis-cli -a "$$REDIS_PASSWORD" --no-auth-warning ping
+          else
+            redis-cli ping
+          fi
       interval: 5s
       timeout:  3s
       retries:  10

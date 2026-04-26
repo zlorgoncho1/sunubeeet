@@ -58,34 +58,48 @@ services:
 
   redis:
     image: redis:7-alpine
-    # Config résiliente pour hôtes sans `vm.overcommit_memory=1` (cas fréquent
-    # sur Coolify / VPS partagés) :
-    #  - --maxmemory 256mb : cap RAM (queue+cache+sessions, suffisant MVP)
-    #  - --stop-writes-on-bgsave-error no : Redis n'arrête pas les écritures
-    #    si un snapshot RDB échoue (sans overcommit, fork() peut planter)
-    #  - --save 60 1 : snapshot toutes les 60s s'il y a au moins 1 modif
-    #    (résilience minimale aux restarts ; perte ≤60s de jobs queue OK)
-    #  - --maxmemory-policy allkeys-lru : éviction LRU si maxmemory atteint
+    # Config résiliente pour hôtes sans `vm.overcommit_memory=1` (Coolify / VPS) +
+    # auth conditionnelle (active --requirepass si REDIS_PASSWORD est défini et
+    # ≠ "null", aligné sur Laravel qui ne send AUTH que dans ce cas).
     #
-    # ⚠ Fix host-level recommandé pour supprimer le WARNING au boot :
-    #   sysctl -w vm.overcommit_memory=1 (puis ajouter à /etc/sysctl.conf)
+    # ⚠ Fix host-level recommandé pour supprimer le WARNING overcommit au boot :
+    #   sysctl -w vm.overcommit_memory=1 (puis /etc/sysctl.conf)
+    environment:
+      REDIS_PASSWORD: "${REDIS_PASSWORD:-}"
     command:
-      - "redis-server"
-      - "--maxmemory"
-      - "256mb"
-      - "--maxmemory-policy"
-      - "allkeys-lru"
-      - "--save"
-      - "60 1"
-      - "--stop-writes-on-bgsave-error"
-      - "no"
-      - "--loglevel"
-      - "warning"
+      - "sh"
+      - "-c"
+      - |
+        if [ -n "$$REDIS_PASSWORD" ] && [ "$$REDIS_PASSWORD" != "null" ]; then
+          echo "[redis] AUTH activée"
+          exec redis-server \
+            --maxmemory 256mb \
+            --maxmemory-policy allkeys-lru \
+            --save "60 1" \
+            --stop-writes-on-bgsave-error no \
+            --loglevel warning \
+            --requirepass "$$REDIS_PASSWORD"
+        else
+          echo "[redis] AUTH désactivée (REDIS_PASSWORD vide ou 'null')"
+          exec redis-server \
+            --maxmemory 256mb \
+            --maxmemory-policy allkeys-lru \
+            --save "60 1" \
+            --stop-writes-on-bgsave-error no \
+            --loglevel warning
+        fi
     volumes:
       - redis-data:/data
     expose: ["6379"]
     healthcheck:
-      test:     ["CMD", "redis-cli", "ping"]
+      test:
+        - "CMD-SHELL"
+        - |
+          if [ -n "$$REDIS_PASSWORD" ] && [ "$$REDIS_PASSWORD" != "null" ]; then
+            redis-cli -a "$$REDIS_PASSWORD" --no-auth-warning ping
+          else
+            redis-cli ping
+          fi
       interval: 10s
       timeout:  3s
       retries:  10
