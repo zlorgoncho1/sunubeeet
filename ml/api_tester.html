@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bët ML — API tester</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    pre.json { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .pulse-ok { box-shadow: 0 0 0 0 rgba(34,197,94,.6); animation: pulse 1.2s ease-out 1; }
+    @keyframes pulse { to { box-shadow: 0 0 0 12px rgba(34,197,94,0); } }
+    details > summary { cursor: pointer; }
+    details > summary::-webkit-details-marker { display: none; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+
+<header class="border-b border-slate-800 bg-slate-900/60 backdrop-blur sticky top-0 z-10">
+  <div class="max-w-6xl mx-auto px-6 py-4 flex items-center gap-4">
+    <div>
+      <h1 class="text-lg font-semibold">Bët ML — API tester</h1>
+      <p class="text-xs text-slate-400">6 endpoints sous <code>/v1</code> · stateless · modèles gratuits</p>
+    </div>
+    <div class="ml-auto flex items-center gap-2">
+      <label class="text-xs text-slate-400">Base URL</label>
+      <input id="base-url" value="http://localhost:5000"
+             class="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-sm w-64 focus:outline-none focus:border-emerald-500" />
+      <span id="health-dot" class="w-2.5 h-2.5 rounded-full bg-slate-600" title="health unknown"></span>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-6xl mx-auto px-6 py-6 grid gap-5 md:grid-cols-2">
+
+  <!-- ─── /v1/health ─── -->
+  <section data-card class="rounded-lg border border-slate-800 bg-slate-900/40 overflow-hidden">
+    <header class="px-4 py-3 border-b border-slate-800 flex items-center gap-2">
+      <span class="text-xs uppercase tracking-wider text-slate-400">GET</span>
+      <code class="text-emerald-300">/v1/health</code>
+      <button data-action="run" data-endpoint="health"
+              class="ml-auto bg-emerald-600 hover:bg-emerald-500 text-sm px-3 py-1 rounded">Tester</button>
+    </header>
+    <div class="p-4 space-y-3">
+      <p class="text-xs text-slate-400">Vérifie que le service tourne et que les clés API sont configurées.</p>
+      <pre data-out class="json text-xs bg-slate-950 border border-slate-800 rounded p-3 overflow-auto h-32">—</pre>
+    </div>
+  </section>
+
+  <!-- ─── /v1/classify ─── -->
+  <section data-card class="rounded-lg border border-slate-800 bg-slate-900/40 overflow-hidden">
+    <header class="px-4 py-3 border-b border-slate-800 flex items-center gap-2">
+      <span class="text-xs uppercase tracking-wider text-slate-400">POST</span>
+      <code class="text-emerald-300">/v1/classify</code>
+      <span class="text-[10px] uppercase text-slate-500 ml-2">Groq Llama 3.3</span>
+      <button data-action="run" data-endpoint="classify"
+              class="ml-auto bg-emerald-600 hover:bg-emerald-500 text-sm px-3 py-1 rounded">Tester</button>
+    </header>
+    <div class="p-4 space-y-3">
+      <label class="block text-xs text-slate-400">Description</label>
+      <textarea id="classify-description" rows="3"
+                class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-sm focus:outline-none focus:border-emerald-500">Une personne s'est effondrée près de la sortie nord du stade, elle ne répond plus.</textarea>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs text-slate-400">Catégorie déclarée</label>
+          <select id="classify-category"
+                  class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-sm focus:outline-none focus:border-emerald-500">
+            <option value="">— non déclarée —</option>
+            <option value="health" selected>health</option>
+            <option value="security">security</option>
+            <option value="crowd">crowd</option>
+            <option value="access_blocked">access_blocked</option>
+            <option value="fire_danger">fire_danger</option>
+            <option value="lost_found">lost_found</option>
+            <option value="logistics">logistics</option>
+            <option value="transport">transport</option>
+            <option value="other">other</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-slate-400">Transcription audio (optionnel)</label>
+          <input id="classify-transcription" placeholder="transcription Deepgram"
+                 class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-sm focus:outline-none focus:border-emerald-500" />
+        </div>
+      </div>
+      <pre data-out class="json text-xs bg-slate-950 border border-slate-800 rounded p-3 overflow-auto h-40">—</pre>
+    </div>
+  </section>
+
+  <!-- ─── /v1/embed ─── -->
+  <section data-card class="rounded-lg border border-slate-800 bg-slate-900/40 overflow-hidden">
+    <header class="px-4 py-3 border-b border-slate-800 flex items-center gap-2">
+      <span class="text-xs uppercase tracking-wider text-slate-400">POST</span>
+      <code class="text-emerald-300">/v1/embed</code>
+      <span class="text-[10px] uppercase text-slate-500 ml-2">MiniLM multilingue</span>
+      <button data-action="run" data-endpoint="embed"
+              class="ml-auto bg-emerald-600 hover:bg-emerald-500 text-sm px-3 py-1 rounded">Tester</button>
+    </header>
+    <div class="p-4 space-y-3">
+      <label class="block text-xs text-slate-400">Textes (un par ligne)</label>
+      <textarea id="embed-texts" rows="4"
+                class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-sm focus:outline-none focus:border-emerald-500">Bagarre violente à la sortie nord
+Personne inconsciente près du gradin B
+Pas d'eau aux toilettes du secteur C</textarea>
+      <pre data-out class="json text-xs bg-slate-950 border border-slate-800 rounded p-3 overflow-auto h-32">—</pre>
+    </div>
+  </section>
+
+  <!-- ─── /v1/dedup ─── -->
+  <section data-card class="rounded-lg border border-slate-800 bg-slate-900/40 overflow-hidden">
+    <header class="px-4 py-3 border-b border-slate-800 flex items-center gap-2">
+      <span class="text-xs uppercase tracking-wider text-slate-400">POST</span>
+      <code class="text-emerald-300">/v1/dedup</code>
+      <span class="text-[10px] uppercase text-slate-500 ml-2">cosine + threshold</span>
+      <button data-action="run" data-endpoint="dedup"
+              class="ml-auto bg-emerald-600 hover:bg-emerald-500 text-sm px-3 py-1 rounded">Tester</button>
+    </header>
+    <div class="p-4 space-y-3">
+      <label class="block text-xs text-slate-400">Texte de l'alerte</label>
+      <textarea id="dedup-text" rows="2"
+                class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-sm focus:outline-none focus:border-emerald-500">Une bagarre vient d'éclater à la sortie nord du stade</textarea>
+      <label class="block text-xs text-slate-400">Voisins spatio-temporels (un par ligne, format <code>id|texte</code>)</label>
+      <textarea id="dedup-neighbors" rows="3"
+                class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-sm focus:outline-none focus:border-emerald-500">a1|Bagarre côté sortie nord, plusieurs personnes
+a2|Pas d'eau aux toilettes du secteur B
+a3|Altercation violente près du gradin nord</textarea>
+      <div class="flex items-center gap-2">
+        <label class="text-xs text-slate-400">Seuil</label>
+        <input id="dedup-threshold" type="number" step="0.05" min="0" max="1" value="0.78"
+               class="w-20 bg-slate-950 border border-slate-800 rounded px-2 py-1 text-sm focus:outline-none focus:border-emerald-500" />
+      </div>
+      <pre data-out class="json text-xs bg-slate-950 border border-slate-800 rounded p-3 overflow-auto h-40">—</pre>
+    </div>
+  </section>
+
+  <!-- ─── /v1/transcribe ─── -->
+  <section data-card class="rounded-lg border border-slate-800 bg-slate-900/40 overflow-hidden">
+    <header class="px-4 py-3 border-b border-slate-800 flex items-center gap-2">
+      <span class="text-xs uppercase tracking-wider text-slate-400">POST</span>
+      <code class="text-emerald-300">/v1/transcribe</code>
+      <span class="text-[10px] uppercase text-slate-500 ml-2">Deepgram nova-2 FR</span>
+      <button data-action="run" data-endpoint="transcribe"
+              class="ml-auto bg-emerald-600 hover:bg-emerald-500 text-sm px-3 py-1 rounded">Tester</button>
+    </header>
+    <div class="p-4 space-y-3">
+      <div class="grid grid-cols-1 gap-3">
+        <div>
+          <label class="block text-xs text-slate-400">Fichier audio (envoyé en base64)</label>
+          <input id="transcribe-file" type="file" accept="audio/*"
+                 class="block w-full text-xs text-slate-300 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-slate-800 file:text-slate-200 file:cursor-pointer" />
+        </div>
+        <div class="text-center text-[10px] text-slate-600">— ou —</div>
+        <div>
+          <label class="block text-xs text-slate-400">URL audio signée</label>
+          <input id="transcribe-url" placeholder="https://..."
+                 class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-sm focus:outline-none focus:border-emerald-500" />
+        </div>
+        <div>
+          <label class="block text-xs text-slate-400">Langue</label>
+          <select id="transcribe-language"
+                  class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-sm focus:outline-none focus:border-emerald-500">
+            <option value="fr" selected>fr (français)</option>
+            <option value="en">en</option>
+            <option value="multi">multi</option>
+          </select>
+        </div>
+      </div>
+      <pre data-out class="json text-xs bg-slate-950 border border-slate-800 rounded p-3 overflow-auto h-32">—</pre>
+    </div>
+  </section>
+
+  <!-- ─── /v1/vision/blur-faces ─── -->
+  <section data-card class="rounded-lg border border-slate-800 bg-slate-900/40 overflow-hidden md:col-span-2">
+    <header class="px-4 py-3 border-b border-slate-800 flex items-center gap-2">
+      <span class="text-xs uppercase tracking-wider text-slate-400">POST</span>
+      <code class="text-emerald-300">/v1/vision/blur-faces</code>
+      <span class="text-[10px] uppercase text-slate-500 ml-2">OpenCV Haar + pixelisation</span>
+      <button data-action="run" data-endpoint="blur"
+              class="ml-auto bg-emerald-600 hover:bg-emerald-500 text-sm px-3 py-1 rounded">Tester</button>
+    </header>
+    <div class="p-4 grid md:grid-cols-3 gap-4">
+      <div class="space-y-2">
+        <label class="block text-xs text-slate-400">Image (envoyée en base64)</label>
+        <input id="blur-file" type="file" accept="image/*"
+               class="block w-full text-xs text-slate-300 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-slate-800 file:text-slate-200 file:cursor-pointer" />
+        <p class="text-[10px] text-slate-500">— ou URL signée —</p>
+        <input id="blur-url" placeholder="https://..."
+               class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-sm focus:outline-none focus:border-emerald-500" />
+      </div>
+      <div class="space-y-1">
+        <label class="block text-xs text-slate-400">Original</label>
+        <div class="aspect-square bg-slate-950 border border-slate-800 rounded flex items-center justify-center overflow-hidden">
+          <img id="blur-input-preview" class="max-w-full max-h-full object-contain hidden" />
+          <span id="blur-input-empty" class="text-xs text-slate-600">aucune image</span>
+        </div>
+      </div>
+      <div class="space-y-1">
+        <label class="block text-xs text-slate-400">Résultat (visages floutés)</label>
+        <div class="aspect-square bg-slate-950 border border-slate-800 rounded flex items-center justify-center overflow-hidden">
+          <img id="blur-output-preview" class="max-w-full max-h-full object-contain hidden" />
+          <span id="blur-output-empty" class="text-xs text-slate-600">—</span>
+        </div>
+      </div>
+      <div class="md:col-span-3">
+        <pre data-out class="json text-xs bg-slate-950 border border-slate-800 rounded p-3 overflow-auto h-24">—</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── /v1/vision/analyze ─── -->
+  <section data-card class="rounded-lg border border-slate-800 bg-slate-900/40 overflow-hidden md:col-span-2">
+    <header class="px-4 py-3 border-b border-slate-800 flex items-center gap-2">
+      <span class="text-xs uppercase tracking-wider text-slate-400">POST</span>
+      <code class="text-emerald-300">/v1/vision/analyze</code>
+      <span class="text-[10px] uppercase text-slate-500 ml-2">Groq Llama-4 Scout vision</span>
+      <button data-action="run" data-endpoint="analyze"
+              class="ml-auto bg-emerald-600 hover:bg-emerald-500 text-sm px-3 py-1 rounded">Tester</button>
+    </header>
+    <div class="p-4 grid md:grid-cols-3 gap-4">
+      <div class="space-y-2">
+        <label class="block text-xs text-slate-400">Image</label>
+        <input id="analyze-file" type="file" accept="image/*"
+               class="block w-full text-xs text-slate-300 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-slate-800 file:text-slate-200 file:cursor-pointer" />
+        <p class="text-[10px] text-slate-500">— ou URL signée —</p>
+        <input id="analyze-url" placeholder="https://..."
+               class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-sm focus:outline-none focus:border-emerald-500" />
+        <label class="block text-xs text-slate-400 mt-2">Catégorie hint</label>
+        <select id="analyze-category"
+                class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-sm focus:outline-none focus:border-emerald-500">
+          <option value="">— aucune —</option>
+          <option value="health">health</option>
+          <option value="security">security</option>
+          <option value="crowd">crowd</option>
+          <option value="access_blocked">access_blocked</option>
+          <option value="fire_danger">fire_danger</option>
+          <option value="lost_found">lost_found</option>
+          <option value="logistics">logistics</option>
+          <option value="transport">transport</option>
+          <option value="other">other</option>
+        </select>
+      </div>
+      <div class="space-y-1">
+        <label class="block text-xs text-slate-400">Aperçu</label>
+        <div class="aspect-square bg-slate-950 border border-slate-800 rounded flex items-center justify-center overflow-hidden">
+          <img id="analyze-input-preview" class="max-w-full max-h-full object-contain hidden" />
+          <span id="analyze-input-empty" class="text-xs text-slate-600">aucune image</span>
+        </div>
+      </div>
+      <div>
+        <pre data-out class="json text-xs bg-slate-950 border border-slate-800 rounded p-3 overflow-auto h-72">—</pre>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="max-w-6xl mx-auto px-6 pb-10 pt-2 text-xs text-slate-500">
+  <p>
+    Le service doit être démarré : <code>python -m ml.api.app</code>. CORS est ouvert <code>*</code> en dev.
+    En cas de 502 sur classify/analyze, vérifier <code>GROQ_API_KEY</code> dans <code>ml/.env</code>.
+    En cas de 503 sur transcribe, vérifier <code>DEEPGRAM_API_KEY</code>.
+  </p>
+</footer>
+
+<script>
+const $ = (sel) => document.querySelector(sel);
+
+const baseUrl = () => $("#base-url").value.replace(/\/$/, "");
+
+function setOut(card, label, payload, kind = "ok", durationMs = null) {
+  const out = card.querySelector("[data-out]");
+  const meta = durationMs != null ? `  ⏱ ${durationMs} ms` : "";
+  const head = `${kind === "ok" ? "✓" : kind === "skip" ? "∼" : "✗"} ${label}${meta}\n`;
+  const body = typeof payload === "string" ? payload : JSON.stringify(payload, null, 2);
+  out.textContent = head + body;
+  card.classList.remove("ring-2", "ring-emerald-500", "ring-rose-500", "ring-amber-500", "pulse-ok");
+  if (kind === "ok") card.classList.add("ring-2", "ring-emerald-500", "pulse-ok");
+  else if (kind === "err") card.classList.add("ring-2", "ring-rose-500");
+  else if (kind === "skip") card.classList.add("ring-2", "ring-amber-500");
+}
+
+async function call(method, path, body) {
+  const url = baseUrl() + path;
+  const t0 = performance.now();
+  const init = { method, headers: { Accept: "application/json" } };
+  if (body !== undefined) {
+    init.headers["Content-Type"] = "application/json";
+    init.body = JSON.stringify(body);
+  }
+  const res = await fetch(url, init);
+  const elapsed = Math.round(performance.now() - t0);
+  let data;
+  try { data = await res.json(); } catch { data = await res.text(); }
+  return { ok: res.ok, status: res.status, data, elapsed };
+}
+
+// File → base64 (sans le préfixe data:...)
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => {
+      const result = r.result;
+      const idx = result.indexOf(",");
+      resolve(idx >= 0 ? result.slice(idx + 1) : result);
+    };
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+}
+
+// ─── handlers ──────────────────────────────────────────────────────────────
+
+const handlers = {
+  async health(card) {
+    const r = await call("GET", "/v1/health");
+    setOut(card, `${r.status}`, r.data, r.ok ? "ok" : "err", r.elapsed);
+    $("#health-dot").className = "w-2.5 h-2.5 rounded-full " + (r.ok ? "bg-emerald-500" : "bg-rose-500");
+  },
+
+  async classify(card) {
+    const body = {
+      description: $("#classify-description").value,
+      declared_category: $("#classify-category").value || null,
+      transcription: $("#classify-transcription").value || null,
+    };
+    if (!body.declared_category) delete body.declared_category;
+    if (!body.transcription) delete body.transcription;
+    const r = await call("POST", "/v1/classify", body);
+    setOut(card, `${r.status}`, r.data, r.ok ? "ok" : "err", r.elapsed);
+  },
+
+  async embed(card) {
+    const texts = $("#embed-texts").value.split("\n").map(s => s.trim()).filter(Boolean);
+    if (!texts.length) return setOut(card, "empty", "fournir au moins un texte", "err");
+    const r = await call("POST", "/v1/embed", { texts });
+    if (r.ok && r.data.vectors) {
+      const preview = {
+        model: r.data.model,
+        dim: r.data.dim,
+        vectors_preview: r.data.vectors.map((v, i) => ({
+          index: i, first8: v.slice(0, 8).map(x => +x.toFixed(4)),
+        })),
+      };
+      setOut(card, `${r.status}`, preview, "ok", r.elapsed);
+    } else setOut(card, `${r.status}`, r.data, "err", r.elapsed);
+  },
+
+  async dedup(card) {
+    const lines = $("#dedup-neighbors").value.split("\n").map(s => s.trim()).filter(Boolean);
+    const neighbors = lines.map((line) => {
+      const sep = line.indexOf("|");
+      return sep >= 0
+        ? { id: line.slice(0, sep).trim(), text: line.slice(sep + 1).trim() }
+        : { id: line, text: line };
+    });
+    const body = {
+      text: $("#dedup-text").value,
+      neighbors,
+      threshold: parseFloat($("#dedup-threshold").value) || 0.78,
+    };
+    const r = await call("POST", "/v1/dedup", body);
+    setOut(card, `${r.status}`, r.data, r.ok ? "ok" : "err", r.elapsed);
+  },
+
+  async transcribe(card) {
+    const file = $("#transcribe-file").files[0];
+    const url = $("#transcribe-url").value.trim();
+    const language = $("#transcribe-language").value;
+    let body;
+    if (file) body = { audio_base64: await fileToBase64(file), language };
+    else if (url) body = { media_url: url, language };
+    else return setOut(card, "empty", "fournir un fichier ou une URL", "err");
+    const r = await call("POST", "/v1/transcribe", body);
+    setOut(card, `${r.status}`, r.data, r.ok ? "ok" : "err", r.elapsed);
+  },
+
+  async blur(card) {
+    const file = $("#blur-file").files[0];
+    const url = $("#blur-url").value.trim();
+    let body;
+    if (file) body = { media_base64: await fileToBase64(file) };
+    else if (url) body = { media_url: url };
+    else return setOut(card, "empty", "fournir un fichier ou une URL", "err");
+    const r = await call("POST", "/v1/vision/blur-faces", body);
+    if (r.ok && r.data.blurred_base64) {
+      const out = $("#blur-output-preview");
+      out.src = "data:image/jpeg;base64," + r.data.blurred_base64;
+      out.classList.remove("hidden");
+      $("#blur-output-empty").classList.add("hidden");
+      const summary = {
+        faces_found: r.data.faces_found,
+        width: r.data.width,
+        height: r.data.height,
+        blurred_size_chars: r.data.blurred_base64.length,
+      };
+      setOut(card, `${r.status}`, summary, "ok", r.elapsed);
+    } else setOut(card, `${r.status}`, r.data, "err", r.elapsed);
+  },
+
+  async analyze(card) {
+    const file = $("#analyze-file").files[0];
+    const url = $("#analyze-url").value.trim();
+    const cat = $("#analyze-category").value;
+    let body;
+    if (file) body = { media_base64: await fileToBase64(file) };
+    else if (url) body = { media_url: url };
+    else return setOut(card, "empty", "fournir un fichier ou une URL", "err");
+    if (cat) body.category_hint = cat;
+    const r = await call("POST", "/v1/vision/analyze", body);
+    setOut(card, `${r.status}`, r.data, r.ok ? "ok" : "err", r.elapsed);
+  },
+};
+
+// ─── wiring ────────────────────────────────────────────────────────────────
+
+document.querySelectorAll("[data-action='run']").forEach((btn) => {
+  btn.addEventListener("click", async () => {
+    const card = btn.closest("[data-card]");
+    const ep = btn.dataset.endpoint;
+    const h = handlers[ep];
+    if (!h) return;
+    btn.disabled = true;
+    const oldText = btn.textContent;
+    btn.textContent = "…";
+    try { await h(card); }
+    catch (e) { setOut(card, "exception", String(e), "err"); }
+    finally { btn.disabled = false; btn.textContent = oldText; }
+  });
+});
+
+// Previews pour les inputs image
+function bindPreview(fileInputId, imgId, emptyId) {
+  $(`#${fileInputId}`).addEventListener("change", (e) => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = $(`#${imgId}`);
+      img.src = reader.result;
+      img.classList.remove("hidden");
+      $(`#${emptyId}`).classList.add("hidden");
+    };
+    reader.readAsDataURL(f);
+  });
+}
+bindPreview("blur-file", "blur-input-preview", "blur-input-empty");
+bindPreview("analyze-file", "analyze-input-preview", "analyze-input-empty");
+
+// Auto-health au chargement
+window.addEventListener("DOMContentLoaded", () => {
+  const card = document.querySelector("[data-card]");
+  handlers.health(card).catch(() => {});
+});
+</script>
+</body>
+</html>
