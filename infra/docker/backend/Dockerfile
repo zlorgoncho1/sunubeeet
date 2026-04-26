@@ -36,7 +36,21 @@ RUN apk add --no-cache \
     && rm -rf /var/cache/apk/*
 
 # Extensions PHP (installer dédié = build reproductible et léger)
-ADD --chmod=0755 https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
+#
+# ⚠ NE PAS utiliser `ADD <url>` ici — BuildKit n'a aucun retry sur les fetch
+# HTTP, et le 502 occasionnel des CDN GitHub Releases fait planter le build
+# (vu en déploiement Coolify : `failed to load cache key: invalid response
+# status 502`). On utilise curl avec --retry et version pinnée pour
+# reproductibilité + résilience.
+ARG IPE_VERSION=2.10.18
+RUN set -eux; \
+    curl --retry 6 --retry-all-errors --retry-delay 3 \
+         --fail --silent --show-error --location \
+         "https://github.com/mlocati/docker-php-extension-installer/releases/download/${IPE_VERSION}/install-php-extensions" \
+         -o /usr/local/bin/install-php-extensions; \
+    chmod +x /usr/local/bin/install-php-extensions
+# (le binaire ne supporte pas `--version` comme flag — il interprète chaque
+# arg comme un nom d'extension. La validation se fait au RUN suivant.)
 
 RUN install-php-extensions \
         pdo_pgsql \
