@@ -56,7 +56,20 @@ services:
 
   redis:
     image: redis:7-alpine
-    command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
+    # Config alignée sur prod : ne pas crash si bgsave échoue (overcommit off
+    # sur certains hôtes), cap mémoire pour cohérence dev/prod.
+    command:
+      - "redis-server"
+      - "--maxmemory"
+      - "256mb"
+      - "--maxmemory-policy"
+      - "allkeys-lru"
+      - "--save"
+      - "60 1"
+      - "--stop-writes-on-bgsave-error"
+      - "no"
+      - "--loglevel"
+      - "warning"
     volumes:
       - redis-data:/data
     ports:

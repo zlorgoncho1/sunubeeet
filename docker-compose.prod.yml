@@ -58,7 +58,29 @@ services:
 
   redis:
     image: redis:7-alpine
-    command: ["redis-server", "--save", "60", "1", "--loglevel", "warning", "--maxmemory-policy", "allkeys-lru"]
+    # Config résiliente pour hôtes sans `vm.overcommit_memory=1` (cas fréquent
+    # sur Coolify / VPS partagés) :
+    #  - --maxmemory 256mb : cap RAM (queue+cache+sessions, suffisant MVP)
+    #  - --stop-writes-on-bgsave-error no : Redis n'arrête pas les écritures
+    #    si un snapshot RDB échoue (sans overcommit, fork() peut planter)
+    #  - --save 60 1 : snapshot toutes les 60s s'il y a au moins 1 modif
+    #    (résilience minimale aux restarts ; perte ≤60s de jobs queue OK)
+    #  - --maxmemory-policy allkeys-lru : éviction LRU si maxmemory atteint
+    #
+    # ⚠ Fix host-level recommandé pour supprimer le WARNING au boot :
+    #   sysctl -w vm.overcommit_memory=1 (puis ajouter à /etc/sysctl.conf)
+    command:
+      - "redis-server"
+      - "--maxmemory"
+      - "256mb"
+      - "--maxmemory-policy"
+      - "allkeys-lru"
+      - "--save"
+      - "60 1"
+      - "--stop-writes-on-bgsave-error"
+      - "no"
+      - "--loglevel"
+      - "warning"
     volumes:
       - redis-data:/data
     expose: ["6379"]
