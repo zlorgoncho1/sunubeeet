@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📋 Bët - Signalement Alerte</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.8em;
+        }
+        
+        .subtitle {
+            color: #999;
+            margin-bottom: 30px;
+            font-size: 0.9em;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        label {
+            display: block;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .categories {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .checkbox-label:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+        
+        .checkbox-label input[type="radio"] {
+            margin-right: 10px;
+            cursor: pointer;
+            width: 18px;
+            height: 18px;
+        }
+        
+        .checkbox-label input[type="radio"]:checked + span {
+            color: #667eea;
+            font-weight: 700;
+        }
+        
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.95em;
+            resize: vertical;
+            min-height: 100px;
+            transition: all 0.3s ease;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        input[type="file"] {
+            cursor: pointer;
+            padding: 8px;
+        }
+        
+        .btn-mic {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .btn-mic:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-mic:active {
+            transform: translateY(0);
+        }
+        
+        .btn-mic-stop {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .btn-mic-stop:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(231, 76, 60, 0.3);
+        }
+        
+        .btn-geo {
+            background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .btn-geo:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(39, 174, 96, 0.3);
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+        
+        button {
+            flex: 1;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .btn-submit {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-submit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-reset {
+            background: #f0f0f0;
+            color: #333;
+        }
+        
+        .btn-reset:hover {
+            background: #e0e0e0;
+        }
+        
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 8px;
+            display: none;
+        }
+        
+        .result.show {
+            display: block;
+            animation: slideUp 0.3s ease;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .result.success {
+            background: #d4edda;
+            border: 2px solid #27ae60;
+            color: #155724;
+        }
+        
+        .result.warning {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            color: #856404;
+        }
+        
+        .result.error {
+            background: #f8d7da;
+            border: 2px solid #e74c3c;
+            color: #721c24;
+        }
+        
+        .result h3 {
+            margin-bottom: 10px;
+        }
+        
+        .result-item {
+            margin-bottom: 8px;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+        
+        .result-item:last-child {
+            border-bottom: none;
+        }
+        
+        .label-inline {
+            font-weight: 700;
+            color: #333;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .loading.show {
+            display: block;
+        }
+        
+        .spinner {
+            border: 3px solid #f0f0f0;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        #audioStatus, #photoStatus, #geoStatus {
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-size: 0.9em;
+            animation: slideUp 0.3s ease;
+        }
+        
+        small {
+            display: block;
+            color: #999;
+            font-size: 0.85em;
+            margin-top: 8px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📋 Signalement Alerte</h1>
+        <p class="subtitle">JOJ Dakar 2026</p>
+        
+        <form id="form">
+            <!-- Catégories -->
+            <div class="form-group">
+                <label>Type d'incident</label>
+                <div class="categories">
+                    <label class="checkbox-label">
+                        <input type="radio" name="categorie" value="medical" required>
+                        <span>🏥 Médical</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="radio" name="categorie" value="securite" required>
+                        <span>🚨 Sécurité</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="radio" name="categorie" value="foule" required>
+                        <span>👥 Foule</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="radio" name="categorie" value="technique" required>
+                        <span>⚙️ Technique</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="radio" name="categorie" value="incendie" required>
+                        <span>🔥 Incendie</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="radio" name="categorie" value="autre" required>
+                        <span>❓ Autre</span>
+                    </label>
+                </div>
+            </div>
+            
+            <!-- Description -->
+            <div class="form-group">
+                <label>Description de l'incident (optionnel si audio)</label>
+                <textarea id="description" name="description" placeholder="Décrivez l'incident en détail..."></textarea>
+            </div>
+            
+            <!-- Audio Microphone -->
+            <div class="form-group">
+                <label>🎙️ Enregistrement audio (optionnel)</label>
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <button type="button" id="micButton" class="btn-mic" style="flex: 1; padding: 12px;">
+                        🎤 Cliquez pour enregistrer
+                    </button>
+                    <button type="button" id="stopButton" class="btn-mic-stop" style="flex: 1; padding: 12px; display: none;">
+                        ⏹️ Arrêter
+                    </button>
+                </div>
+                <div id="recordingTime" style="display: none; text-align: center; color: #e74c3c; font-weight: 600; margin-bottom: 10px;">
+                    Enregistrement: <span id="timer">00:00</span>
+                </div>
+                <div id="audioStatus" style="padding: 12px; border-radius: 6px; display: none; margin-top: 8px;">
+                    <span id="audioStatusText"></span>
+                </div>
+            </div>
+            
+            <!-- Photo Floue -->
+            <div class="form-group">
+                <label>📷 Photo (optionnel - sera floutée)</label>
+                <input type="file" id="photo" name="photo" accept="image/*" style="margin-bottom: 10px;" />
+                <canvas id="photoCanvas" style="display: none; max-width: 100%; border-radius: 8px; margin-top: 10px;"></canvas>
+                <div id="photoPreview" style="max-width: 100%; margin-top: 10px;"></div>
+                <div id="photoStatus" style="padding: 12px; border-radius: 6px; display: none; margin-top: 8px;">
+                    <span id="photoStatusText"></span>
+                </div>
+            </div>
+            
+            <!-- Géolocalisation -->
+            <div class="form-group">
+                <label>📍 Géolocalisation (optionnel)</label>
+                <button type="button" id="geoButton" class="btn-geo" style="width: 100%; padding: 12px;">
+                    📍 Activer localisation
+                </button>
+                <div id="geoStatus" style="padding: 12px; border-radius: 6px; display: none; margin-top: 8px;">
+                    <span id="geoStatusText"></span>
+                </div>
+                <input type="hidden" id="latitude" name="latitude" />
+                <input type="hidden" id="longitude" name="longitude" />
+            </div>
+            
+            <!-- Boutons -->
+            <div class="button-group">
+                <button type="submit" class="btn-submit">🚀 Envoyer</button>
+                <button type="reset" class="btn-reset">🔄 Effacer</button>
+            </div>
+        </form>
+        
+        <!-- Chargement -->
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Traitement en cours...</p>
+        </div>
+        
+        <!-- Résultat -->
+        <div class="result" id="result">
+            <h3 id="resultTitle"></h3>
+            <div id="resultContent"></div>
+        </div>
+    </div>
+    
+    <script>
+        const form = document.getElementById('form');
+        const loading = document.getElementById('loading');
+        const result = document.getElementById('result');
+        const micButton = document.getElementById('micButton');
+        const stopButton = document.getElementById('stopButton');
+        const recordingTime = document.getElementById('recordingTime');
+        const timer = document.getElementById('timer');
+        const audioStatus = document.getElementById('audioStatus');
+        const audioStatusText = document.getElementById('audioStatusText');
+        const geoButton = document.getElementById('geoButton');
+        const geoStatus = document.getElementById('geoStatus');
+        const geoStatusText = document.getElementById('geoStatusText');
+        const photoInput = document.getElementById('photo');
+        const photoCanvas = document.getElementById('photoCanvas');
+        const photoPreview = document.getElementById('photoPreview');
+        const photoStatus = document.getElementById('photoStatus');
+        const photoStatusText = document.getElementById('photoStatusText');
+        const latitudeInput = document.getElementById('latitude');
+        const longitudeInput = document.getElementById('longitude');
+        const API_URL = 'http://localhost:5000/alerte/';  // NOUVEAU ENDPOINT
+        
+        let audioBase64 = null;
+        let photoBase64 = null;
+        let mediaRecorder = null;
+        let recordedChunks = [];
+        let recordingStartTime = null;
+        let timerInterval = null;
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.8em;
+        }
+        
+        .subtitle {
+            color: #999;
+            margin-bottom: 30px;
+            font-size: 0.9em;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        label {
+            display: block;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .categories {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .checkbox-label:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+        
+        .checkbox-label input[type="radio"] {
+            margin-right: 10px;
+            cursor: pointer;
+            width: 18px;
+            height: 18px;
+        }
+        
+        .checkbox-label input[type="radio"]:checked + span {
+            color: #667eea;
+            font-weight: 700;
+        }
+        
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.95em;
+            resize: vertical;
+            min-height: 100px;
+            transition: all 0.3s ease;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        input[type="file"] {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            border: 2px dashed #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #fafafa;
+        }
+        
+        input[type="file"]:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+        
+        input[type="file"]::file-selector-button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-right: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        input[type="file"]::file-selector-button:hover {
+            background: #5568d3;
+        }
+        
+        .btn-mic {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .btn-mic:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-mic:active {
+            transform: translateY(0);
+        }
+        
+        .btn-mic-stop {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .btn-mic-stop:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(231, 76, 60, 0.3);
+        }
+        
+        .btn-geo {
+            background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .btn-geo:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(39, 174, 96, 0.3);
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+        
+        button {
+            flex: 1;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .btn-submit {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-submit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-reset {
+            background: #f0f0f0;
+            color: #333;
+        }
+        
+        .btn-reset:hover {
+            background: #e0e0e0;
+        }
+        
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 8px;
+            display: none;
+        }
+        
+        .result.show {
+            display: block;
+            animation: slideUp 0.3s ease;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .result.success {
+            background: #d4edda;
+            border: 2px solid #27ae60;
+            color: #155724;
+        }
+        
+        .result.error {
+            background: #f8d7da;
+            border: 2px solid #e74c3c;
+            color: #721c24;
+        }
+        
+        .result h3 {
+            margin-bottom: 10px;
+        }
+        
+        .result-item {
+            margin-bottom: 8px;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+        
+        .result-item:last-child {
+            border-bottom: none;
+        }
+        
+        .label-inline {
+            font-weight: 700;
+            color: #333;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .loading.show {
+            display: block;
+        }
+        
+        .spinner {
+            border: 3px solid #f0f0f0;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        #audioStatus {
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-size: 0.9em;
+            animation: slideUp 0.3s ease;
+        }
+        
+        small {
+            display: block;
+            color: #999;
+            font-size: 0.85em;
+            margin-top: 8px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📋 Signalement Incident</h1>
+        <p class="subtitle">JOJ Dakar 2026</p>
+        
+        <form id="form">
+            <!-- Catégories -->
+            <div class="form-group">
+                <label>Type d'incident</label>
+                <div class="categories">
+                    <label class="checkbox-label">
+                        <input type="radio" name="categorie" value="médical" required>
+                        <span>🏥 Médical</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="radio" name="categorie" value="sécurité" required>
+                        <span>🚨 Sécurité</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="radio" name="categorie" value="foule" required>
+                        <span>👥 Foule</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="radio" name="categorie" value="technique" required>
+                        <span>⚙️ Technique</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="radio" name="categorie" value="incendie" required>
+                        <span>🔥 Incendie</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="radio" name="categorie" value="autre" required>
+                        <span>❓ Autre</span>
+                    </label>
+                </div>
+            </div>
+            
+            <!-- Description -->
+            <div class="form-group">
+                <label>Description de l'incident (optionnel si audio)</label>
+                <textarea id="description" name="description" placeholder="Décrivez l'incident en détail..."></textarea>
+            </div>
+            
+            <!-- Audio Microphone -->
+            <div class="form-group">
+                <label>🎙️ Enregistrement audio (optionnel)</label>
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <button type="button" id="micButton" class="btn-mic" style="flex: 1; padding: 12px;">
+                        🎤 Cliquez pour enregistrer
+                    </button>
+                    <button type="button" id="stopButton" class="btn-mic-stop" style="flex: 1; padding: 12px; display: none;">
+                        ⏹️ Arrêter
+                    </button>
+                </div>
+                <div id="recordingTime" style="display: none; text-align: center; color: #e74c3c; font-weight: 600; margin-bottom: 10px;">
+                    Enregistrement: <span id="timer">00:00</span>
+                </div>
+                <div id="audioStatus" style="padding: 12px; border-radius: 6px; display: none; margin-top: 8px;">
+                    <span id="audioStatusText"></span>
+                </div>
+            </div>
+            
+            <!-- Photo Floue -->
+            <div class="form-group">
+                <label>📷 Photo (optionnel - sera floutée)</label>
+                <input type="file" id="photo" name="photo" accept="image/*" style="margin-bottom: 10px;" />
+                <canvas id="photoCanvas" style="display: none; max-width: 100%; border-radius: 8px; margin-top: 10px;"></canvas>
+                <div id="photoPreview" style="max-width: 100%; margin-top: 10px;"></div>
+                <div id="photoStatus" style="padding: 12px; border-radius: 6px; display: none; margin-top: 8px;">
+                    <span id="photoStatusText"></span>
+                </div>
+            </div>
+            
+            <!-- Géolocalisation -->
+            <div class="form-group">
+                <label>📍 Géolocalisation (optionnel)</label>
+                <button type="button" id="geoButton" class="btn-geo" style="width: 100%; padding: 12px;">
+                    📍 Activer localisation
+                </button>
+                <div id="geoStatus" style="padding: 12px; border-radius: 6px; display: none; margin-top: 8px;">
+                    <span id="geoStatusText"></span>
+                </div>
+                <input type="hidden" id="latitude" name="latitude" />
+                <input type="hidden" id="longitude" name="longitude" />
+            </div>
+            
+            <!-- Boutons -->
+            <div class="button-group">
+                <button type="submit" class="btn-submit">🚀 Envoyer</button>
+                <button type="reset" class="btn-reset">🔄 Effacer</button>
+            </div>
+        </form>
+        
+        <!-- Chargement -->
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Traitement en cours...</p>
+        </div>
+        
+        <!-- Résultat -->
+        <div class="result" id="result">
+            <h3 id="resultTitle"></h3>
+            <div id="resultContent"></div>
+        </div>
+    </div>
+    
+    <script>
+        const form = document.getElementById('form');
+        const loading = document.getElementById('loading');
+        const result = document.getElementById('result');
+        const micButton = document.getElementById('micButton');
+        const stopButton = document.getElementById('stopButton');
+        const recordingTime = document.getElementById('recordingTime');
+        const timer = document.getElementById('timer');
+        const audioStatus = document.getElementById('audioStatus');
+        const audioStatusText = document.getElementById('audioStatusText');
+        const geoButton = document.getElementById('geoButton');
+        const geoStatus = document.getElementById('geoStatus');
+        const geoStatusText = document.getElementById('geoStatusText');
+        const photoInput = document.getElementById('photo');
+        const photoCanvas = document.getElementById('photoCanvas');
+        const photoPreview = document.getElementById('photoPreview');
+        const photoStatus = document.getElementById('photoStatus');
+        const photoStatusText = document.getElementById('photoStatusText');
+        const latitudeInput = document.getElementById('latitude');
+        const longitudeInput = document.getElementById('longitude');
+        const API_URL = 'http://localhost:5000/classifier';
+        
+        let audioBase64 = null;
+        let photoBase64 = null;
+        let mediaRecorder = null;
+        let recordedChunks = [];
+        let recordingStartTime = null;
+        let timerInterval = null;
+        
+        // Initialiser le microphone
+        micButton.addEventListener('click', async (e) => {
+            e.preventDefault();
+            
+            try {
+                // Demander l'accès au microphone
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                
+                // Créer le MediaRecorder
+                mediaRecorder = new MediaRecorder(stream);
+                recordedChunks = [];
+                recordingStartTime = Date.now();
+                
+                // Afficher les contrôles
+                micButton.style.display = 'none';
+                stopButton.style.display = 'flex';
+                recordingTime.style.display = 'block';
+                
+                // Démarrer le timer
+                startTimer();
+                
+                // Traiter les données d'audio
+                mediaRecorder.ondataavailable = (event) => {
+                    recordedChunks.push(event.data);
+                };
+                
+                // Arrêt de l'enregistrement
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(recordedChunks, { type: 'audio/webm' });
+                    convertBlobToBase64(audioBlob);
+                    
+                    // Arrêter le flux du microphone
+                    stream.getTracks().forEach(track => track.stop());
+                };
+                
+                mediaRecorder.start();
+                
+            } catch (error) {
+                showAudioError(`Erreur microphone: ${error.message}`);
+            }
+        });
+        
+        // Arrêter l'enregistrement
+        stopButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+                
+                // Masquer les contrôles
+                stopButton.style.display = 'none';
+                micButton.style.display = 'flex';
+                recordingTime.style.display = 'none';
+                
+                // Arrêter le timer
+                clearInterval(timerInterval);
+            }
+        });
+        
+        // Gérer le timer
+        function startTimer() {
+            let seconds = 0;
+            timerInterval = setInterval(() => {
+                seconds++;
+                const mins = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                timer.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+            }, 1000);
+        }
+        
+        // Convertir Blob en Base64
+        function convertBlobToBase64(blob) {
+            const reader = new FileReader();
+            
+            reader.onload = (event) => {
+                audioBase64 = event.target.result.split(',')[1];
+                
+                // Afficher le statut de succès
+                audioStatus.style.display = 'block';
+                audioStatus.style.background = '#d4edda';
+                audioStatus.style.color = '#155724';
+                audioStatus.style.borderLeft = '4px solid #27ae60';
+                audioStatusText.textContent = `✅ Audio enregistré (${(blob.size / 1024).toFixed(2)} KB)`;
+            };
+            
+            reader.onerror = () => {
+                showAudioError('Erreur lors du traitement de l\'audio');
+                audioBase64 = null;
+            };
+            
+            reader.readAsDataURL(blob);
+        }
+        
+        function showAudioError(message) {
+            audioStatus.style.display = 'block';
+            audioStatus.style.background = '#f8d7da';
+            audioStatus.style.color = '#721c24';
+            audioStatus.style.borderLeft = '4px solid #e74c3c';
+            audioStatusText.textContent = `❌ ${message}`;
+        }
+        
+        // Gestion photo avec floutage
+        photoInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            
+            if (!file) {
+                photoPreview.innerHTML = '';
+                photoBase64 = null;
+                photoStatus.style.display = 'none';
+                return;
+            }
+            
+            const reader = new FileReader();
+            
+            reader.onload = (event) => {
+                const img = new Image();
+                
+                img.onload = () => {
+                    // Flouter l'image via canvas
+                    const ctx = photoCanvas.getContext('2d');
+                    photoCanvas.width = img.width;
+                    photoCanvas.height = img.height;
+                    
+                    ctx.filter = 'blur(10px)';
+                    ctx.drawImage(img, 0, 0);
+                    
+                    // Afficher la preview
+                    photoCanvas.style.display = 'block';
+                    photoBase64 = photoCanvas.toDataURL().split(',')[1];
+                    
+                    // Afficher le statut
+                    photoStatus.style.display = 'block';
+                    photoStatus.style.background = '#d4edda';
+                    photoStatus.style.color = '#155724';
+                    photoStatus.style.borderLeft = '4px solid #27ae60';
+                    photoStatusText.textContent = `✅ Photo floutée (${(file.size / 1024).toFixed(2)} KB)`;
+                };
+                
+                img.src = event.target.result;
+            };
+            
+            reader.readAsDataURL(file);
+        });
+        
+        // Gestion géolocalisation
+        geoButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            
+            if (!navigator.geolocation) {
+                showGeoError('Géolocalisation non supportée par votre navigateur');
+                return;
+            }
+            
+            geoButton.disabled = true;
+            geoButton.textContent = '📍 Localisation...';
+            
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    
+                    latitudeInput.value = lat;
+                    longitudeInput.value = lon;
+                    
+                    geoStatus.style.display = 'block';
+                    geoStatus.style.background = '#d4edda';
+                    geoStatus.style.color = '#155724';
+                    geoStatus.style.borderLeft = '4px solid #27ae60';
+                    geoStatusText.textContent = `✅ Localisé: ${lat.toFixed(4)}° N, ${lon.toFixed(4)}° E`;
+                    
+                    geoButton.disabled = false;
+                    geoButton.textContent = '📍 Localisation activée';
+                },
+                (error) => {
+                    showGeoError(`Erreur: ${error.message}`);
+                    geoButton.disabled = false;
+                    geoButton.textContent = '📍 Activer localisation';
+                }
+            );
+        });
+        
+        function showGeoError(message) {
+            geoStatus.style.display = 'block';
+            geoStatus.style.background = '#f8d7da';
+            geoStatus.style.color = '#721c24';
+            geoStatus.style.borderLeft = '4px solid #e74c3c';
+            geoStatusText.textContent = `❌ ${message}`;
+        }
+        
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const categorie = document.querySelector('input[name="categorie"]:checked').value;
+            const description = document.getElementById('description').value.trim();
+            
+            // Validation: au moins description OU audio
+            if (!description && !audioBase64) {
+                showError('Veuillez écrire une description ou enregistrer un audio');
+                return;
+            }
+            
+            // Générer spectateur_id si pas déjà défini
+            const spectateur_id = 'SPECTATEUR_' + Date.now();
+            
+            const payload = {
+                categorie,
+                description: description || null,  // Null si pas de description
+                spectateur_id,
+                audio_base64: audioBase64 || null,
+                photo_base64: photoBase64 || null,
+                latitude: latitudeInput.value ? parseFloat(latitudeInput.value) : null,
+                longitude: longitudeInput.value ? parseFloat(longitudeInput.value) : null
+            };
+            
+            // Afficher le loader
+            loading.classList.add('show');
+            result.classList.remove('show');
+            form.style.opacity = '0.5';
+            form.style.pointerEvents = 'none';
+            
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Erreur ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                // Afficher le résultat
+                showResult(data);
+                
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                loading.classList.remove('show');
+                form.style.opacity = '1';
+                form.style.pointerEvents = 'auto';
+            }
+        });
+        
+        function showResult(data) {
+            let html = '';
+            let resultClass = 'success';
+            let titleText = '';
+            
+            // Adapter selon le status
+            if (data.is_duplicate) {
+                // ALERTE REDONDANTE (DUPLICATE)
+                resultClass = 'warning';
+                titleText = '⚠️ Alerte redondante détectée';
+                
+                html = `
+                    <div class="result-item">
+                        <span class="label-inline">📋 Référence :</span> ${data.reference}
+                    </div>
+                    <div class="result-item">
+                        <span class="label-inline">Status :</span> ${data.status}
+                    </div>
+                    <div class="result-item">
+                        <span class="label-inline">🚨 Duplicate de :</span> ${data.duplicate_of_reference}
+                    </div>
+                    <div class="result-item">
+                        <span class="label-inline">Message :</span> ${data.message}
+                    </div>
+                `;
+            } else if (data.status === 'processing') {
+                // ALERTE ACCEPTÉE - EN ATTENTE D'ANALYSE IA
+                titleText = '✅ Alerte créée et enregistrée';
+                
+                html = `
+                    <div class="result-item">
+                        <span class="label-inline">📋 Référence :</span> <strong>${data.reference}</strong>
+                    </div>
+                    <div class="result-item">
+                        <span class="label-inline">ID Alerte :</span> ${data.alerte_id}
+                    </div>
+                    <div class="result-item">
+                        <span class="label-inline">Status :</span> ${data.status}
+                    </div>
+                    <div class="result-item">
+                        <span class="label-inline">🤖 Analyse :</span> En cours en arrière-plan
+                    </div>
+                    <div class="result-item">
+                        <span class="label-inline">Message :</span> ${data.message}
+                    </div>
+                    <small style="color: #155724; margin-top: 15px;">✅ Vous pouvez continuer à utiliser l'application. Les résultats de l'analyse IA apparaîtront prochainement.</small>
+                `;
+            } else {
+                // Autres statuts
+                titleText = `ℹ️ ${data.message}`;
+                
+                html = `
+                    <div class="result-item">
+                        <span class="label-inline">📋 Référence :</span> ${data.reference}
+                    </div>
+                    <div class="result-item">
+                        <span class="label-inline">Status :</span> ${data.status}
+                    </div>
+                `;
+            }
+            
+            document.getElementById('resultTitle').textContent = titleText;
+            document.getElementById('resultContent').innerHTML = html;
+            result.classList.add('show', resultClass);
+        }
+        
+        function showError(message) {
+            document.getElementById('resultTitle').textContent = '❌ Erreur';
+            document.getElementById('resultContent').innerHTML = `<div>${message}</div>`;
+            result.classList.remove('success', 'warning');
+            result.classList.add('show', 'error');
+        }
+    </script>
+</body>
+</html>
