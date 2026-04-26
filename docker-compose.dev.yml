@@ -216,9 +216,9 @@ services:
     volumes:
       - ./ml:/app/ml                       # bind-mount = hot reload Python
     ports:
-      # Défaut 5050 pour éviter le conflit avec AirPlay Receiver sur macOS Monterey+
-      # (qui squatte :5000). Override via ML_API_PORT dans .env si besoin.
-      - "${ML_API_PORT:-5050}:5000"
+      # Port hôte high-range (47821) pour éviter tout conflit (5000 = AirPlay
+      # macOS Monterey+, 5050 = parfois pris). Override via ML_API_PORT dans .env.
+      - "${ML_API_PORT:-47821}:5000"
     networks: [bet]
     restart: unless-stopped
     healthcheck:
