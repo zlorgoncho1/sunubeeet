@@ -26,7 +26,7 @@ load_dotenv(env_path, override=False)
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 logging.basicConfig(
-    level=os.environ.get("LOG_LEVEL", "INFO"),
+    level=os.environ.get("LOG_LEVEL", "INFO").upper(),
     format="%(asctime)s %(levelname)s %(name)s: %(message)s",
 )
 logger = logging.getLogger(__name__)
