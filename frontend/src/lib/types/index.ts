@@ -351,35 +351,3 @@ export interface IncidentTimelineEntry {
   done: boolean;
   action: string;
 }
-
-// ── Création d'alerte ──────────────────────────────────────────────────
-
-export interface CreateAlerteRequest {
-  category: AlerteCategory;
-  sub_category?: SubCategory;
-  description?: string;
-  photo_media_id?: string;
-  audio_media_id?: string;
-  latitude: number;
-  longitude: number;
-  client_fingerprint?: string;
-  qr_token?: string;
-}
-
-export interface CreateAlerteResponse {
-  data: {
-    id: string;
-    reference: string;
-    category: AlerteCategory;
-    sub_category: SubCategory | null;
-    description: string | null;
-    latitude: number;
-    longitude: number;
-    status: AlerteStatus;
-    is_potential_duplicate: boolean;
-    duplicate_of_alerte_id: string | null;
-    created_at: string;
-    updated_at: string;
-  };
-  warning?: string;
-}
