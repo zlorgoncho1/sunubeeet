@@ -66,4 +66,14 @@ class Mission extends Model
     {
         return in_array($this->status, ['assigned', 'accepted', 'on_route', 'on_site']);
     }
+
+    /**
+     * Génère une référence unique pour la mission (format: MIS-YYYY-NNNNNNN)
+     */
+    public function generateReference(): string
+    {
+        $year = now()->year;
+        $sequence = str_pad($this->id, 7, '0', STR_PAD_LEFT);
+        return "MIS-{$year}-{$sequence}";
+    }
 }

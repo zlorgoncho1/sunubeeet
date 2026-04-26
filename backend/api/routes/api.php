@@ -14,11 +14,22 @@ Route::prefix('v1')->group(function () {
     // Auth
     // -----------------------------------------------------------------------
     Route::prefix('auth')->group(function () {
+        // Registration
         Route::post('spectator/register', [\App\Http\Controllers\Auth\RegisterController::class, 'spectator']);
+
+        // Login & Logout
         Route::post('login',              [\App\Http\Controllers\Auth\LoginController::class, 'login']);
         Route::post('refresh',            [\App\Http\Controllers\Auth\LoginController::class, 'refresh']);
         Route::post('logout',             [\App\Http\Controllers\Auth\LoginController::class, 'logout'])->middleware('auth.jwt');
+
+        // Phone Verification (après inscription)
+        Route::post('verify-phone/start',   [\App\Http\Controllers\Auth\PhoneVerificationController::class, 'start'])->middleware('auth.jwt');
+        Route::post('verify-phone/confirm', [\App\Http\Controllers\Auth\PhoneVerificationController::class, 'confirm'])->middleware('auth.jwt');
+
+        // Legacy route (pour compatibilité)
         Route::post('spectator/verify-phone', [\App\Http\Controllers\Auth\RegisterController::class, 'verifyPhone']);
+
+        // Password Management
         Route::post('password/forgot',        [\App\Http\Controllers\Auth\PasswordController::class, 'forgot']);
         Route::post('password/reset',         [\App\Http\Controllers\Auth\PasswordController::class, 'reset']);
         Route::post('password/change',        [\App\Http\Controllers\Auth\PasswordController::class, 'change'])->middleware('auth.jwt');
@@ -34,6 +45,7 @@ Route::prefix('v1')->group(function () {
         Route::post('tracking/request-otp',                          [\App\Http\Controllers\QR\QrTrackingController::class, 'requestOtp']);
         Route::post('tracking/verify-otp',                           [\App\Http\Controllers\QR\QrTrackingController::class, 'verifyOtp']);
         Route::get('tracking/alertes',                               [\App\Http\Controllers\QR\QrTrackingController::class, 'alertes'])->middleware('tracking.token');
+        Route::get('tracking/alertes/{alerte}',                      [\App\Http\Controllers\QR\QrTrackingController::class, 'alerteDetail'])->middleware('tracking.token');
     });
 
     // -----------------------------------------------------------------------
@@ -44,19 +56,22 @@ Route::prefix('v1')->group(function () {
         // Espace personnel (tous rôles connectés)
         Route::prefix('me')->group(function () {
             Route::patch('presence',                     [\App\Http\Controllers\Agent\PresenceController::class, 'update']);
+            Route::post('presence/heartbeat',            [\App\Http\Controllers\Agent\PresenceController::class, 'heartbeat']);
             Route::get('alertes',                        [\App\Http\Controllers\Spectator\MyAlerteController::class, 'index']);
             Route::get('alertes/{alerte}/timeline',      [\App\Http\Controllers\Spectator\MyAlerteController::class, 'timeline']);
             Route::get('missions/active',                [\App\Http\Controllers\Agent\MissionController::class, 'active']);
+            Route::get('missions',                       [\App\Http\Controllers\Agent\MissionController::class, 'index']);
         });
 
         // Alertes (flow App — spectateur connecté)
-        Route::post('alertes', [\App\Http\Controllers\Spectator\AlereteController::class, 'store']);
+        Route::post('alertes', [\App\Http\Controllers\Api\V1\AlerteController::class, 'store']);
 
         // Fichiers / Médias
         Route::prefix('files')->group(function () {
             Route::post('upload-url',        [\App\Http\Controllers\MediaController::class, 'uploadUrl']);
             Route::post('{media}/finalize',  [\App\Http\Controllers\MediaController::class, 'finalize']);
             Route::get('{media}/url',        [\App\Http\Controllers\MediaController::class, 'signedUrl']);
+            Route::get('{media}/transcription', [\App\Http\Controllers\MediaController::class, 'transcription']);
         });
 
         // Map spectateur
@@ -98,7 +113,17 @@ Route::prefix('v1')->group(function () {
         // Routes coordinateur
         Route::middleware('role:coordinator,admin,super_admin')->group(function () {
 
+            // Alertes — actions coordinateur
+            Route::get('alertes',                           [\App\Http\Controllers\Coordinator\AlerteController::class, 'index']);
+            Route::get('alertes/{alerte}',                  [\App\Http\Controllers\Coordinator\AlerteController::class, 'show']);
+            Route::post('alertes/{alerte}/validate',        [\App\Http\Controllers\Coordinator\AlerteController::class, 'validateAlerte']);
+            Route::post('alertes/{alerte}/mark-duplicate',  [\App\Http\Controllers\Coordinator\AlerteController::class, 'markDuplicate']);
+            Route::post('alertes/{alerte}/mark-false-alert', [\App\Http\Controllers\Coordinator\AlerteController::class, 'markFalseAlert']);
+            Route::post('alertes/{alerte}/reject',          [\App\Http\Controllers\Coordinator\AlerteController::class, 'reject']);
+            Route::get('alertes/{alerte}/timeline',         [\App\Http\Controllers\Coordinator\AlerteController::class, 'timeline']);
+
             // Incidents — actions coordinateur
+            Route::post('incidents',                         [\App\Http\Controllers\Coordinator\IncidentController::class, 'store']);
             Route::patch('incidents/{incident}',          [\App\Http\Controllers\Coordinator\IncidentController::class, 'update']);
             Route::post('incidents/{incident}/resolve',   [\App\Http\Controllers\Coordinator\IncidentController::class, 'resolve']);
             Route::post('incidents/{incident}/close',     [\App\Http\Controllers\Coordinator\IncidentController::class, 'close']);
@@ -109,6 +134,8 @@ Route::prefix('v1')->group(function () {
             Route::patch('missions/{mission}',              [\App\Http\Controllers\Coordinator\MissionController::class, 'update']);
             Route::post('missions/{mission}/cancel',        [\App\Http\Controllers\Coordinator\MissionController::class, 'cancel']);
             Route::post('missions/{mission}/reassign',      [\App\Http\Controllers\Coordinator\MissionController::class, 'reassign']);
+            Route::post('missions/{mission}/service-infos', [\App\Http\Controllers\Coordinator\MissionController::class, 'addServiceInfo']);
+            Route::delete('missions/{mission}/service-infos/{serviceInfo}', [\App\Http\Controllers\Coordinator\MissionController::class, 'removeServiceInfo']);
 
             // Sites — CRUD coordinateur
             Route::post('sites',          [\App\Http\Controllers\SiteController::class, 'store']);
@@ -130,6 +157,7 @@ Route::prefix('v1')->group(function () {
                 Route::get('kpis',           [\App\Http\Controllers\Coordinator\DashboardController::class, 'kpis']);
                 Route::get('incidents/live', [\App\Http\Controllers\Coordinator\DashboardController::class, 'incidentsLive']);
                 Route::get('agents/live',    [\App\Http\Controllers\Coordinator\DashboardController::class, 'agentsLive']);
+                Route::get('alertes/pending-duplicates', [\App\Http\Controllers\Coordinator\DashboardController::class, 'pendingDuplicates']);
             });
         });
 

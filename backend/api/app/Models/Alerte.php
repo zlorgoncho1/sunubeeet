@@ -76,4 +76,24 @@ class Alerte extends Model
         return $this->morphMany(TrackingEvent::class, null, 'target_type', 'target_id')
             ->where('target_type', 'alerte');
     }
+
+    public function getPhotoMediaAttribute()
+    {
+        return $this->photo;
+    }
+
+    public function getAudioMediaAttribute()
+    {
+        return $this->audio;
+    }
+
+    /**
+     * Génère une référence unique pour l'alerte (format: AL-YYYY-NNNNNNN)
+     */
+    public function generateReference(): string
+    {
+        $year = now()->year;
+        $sequence = str_pad($this->id, 7, '0', STR_PAD_LEFT);
+        return "AL-{$year}-{$sequence}";
+    }
 }

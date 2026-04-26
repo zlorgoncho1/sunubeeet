@@ -1,0 +1,212 @@
+# ─── Bët — Compose PROD ─────────────────────────────────────────────────────
+# Stack production : UN SEUL port hôte exposé → nginx-edge sur :80.
+# Tous les autres services restent en réseau interne `bet` (résolution DNS
+# Docker entre containers, aucun binding hôte).
+#
+# Les directives `expose:` sont purement déclaratives (documentation des ports
+# écoutés par chaque service) — fonctionnellement Docker DNS permet déjà toute
+# communication intra-network sans elles.
+#
+# Accès console MinIO (ops uniquement) :
+#   docker compose -f docker-compose.prod.yml exec minio sh             # shell direct
+#   ssh -L 9001:minio:9001 user@prod-host                               # tunnel SSH
+#   ou ajouter temporairement un mapping `ports: ["9001:9001"]` au service minio
+#
+# Cycle de déploiement 1-click :
+#   docker compose -f docker-compose.prod.yml build
+#   docker compose -f docker-compose.prod.yml up -d
+#
+# Hors scope v1 (à câbler ultérieurement) :
+#   - terminaison TLS (Caddy/Traefik au-dessus)
+#   - secrets manager (Docker Secrets)
+#   - CDN devant MinIO
+#   - backup/restore postgres + minio
+
+name: bet-prod
+
+networks:
+  bet:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  redis-data:
+  minio-data:
+  backend-storage:
+
+services:
+  # ───────────────────────────────────────────────────────────────────────────
+  # Data layer (interne, non exposé)
+  # ───────────────────────────────────────────────────────────────────────────
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB:       ${DB_DATABASE}
+      POSTGRES_USER:     ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    expose: ["5432"]
+    healthcheck:
+      test:     ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout:  3s
+      retries:  10
+    networks: [bet]
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "60", "1", "--loglevel", "warning", "--maxmemory-policy", "allkeys-lru"]
+    volumes:
+      - redis-data:/data
+    expose: ["6379"]
+    healthcheck:
+      test:     ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout:  3s
+      retries:  10
+    networks: [bet]
+    restart: unless-stopped
+
+  minio:
+    image: minio/minio:latest
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER:     ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      # MINIO_SERVER_URL : à définir quand un vrai domaine sera devant
+      # ex. MINIO_SERVER_URL=https://app.bet.sn (les URLs signées utiliseront ce host)
+    volumes:
+      - minio-data:/data
+    expose:
+      - "9000"   # S3 API (consommé par nginx-edge via /media/ et par backend pour signer)
+      - "9001"   # Console UI (accès ops via tunnel SSH ou docker exec, pas de port hôte)
+    healthcheck:
+      test:     ["CMD", "curl", "-fsS", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout:  3s
+      retries:  10
+    networks: [bet]
+    restart: unless-stopped
+
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ENDPOINT:      http://minio:9000
+      MINIO_ROOT_USER:     ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET:        ${AWS_BUCKET}
+      MINIO_CORS_ORIGIN:   ${MINIO_CORS_ORIGIN:-http://localhost}
+    entrypoint: ["/bin/sh", "/init-bucket.sh"]
+    volumes:
+      - ./infra/docker/minio/init-bucket.sh:/init-bucket.sh:ro
+    networks: [bet]
+    restart: "no"
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # Backend — image unique, 3 commandes
+  # ───────────────────────────────────────────────────────────────────────────
+
+  backend-php:
+    build:
+      context: .
+      dockerfile: infra/docker/backend/Dockerfile
+    image: bet/backend:latest
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      INIT_APP:      "true"               # primary : seul à faire migrate + cache
+      APP_ENV:       production
+      APP_DEBUG:     "false"
+      DB_HOST:       postgres
+      REDIS_HOST:    redis
+      AWS_ENDPOINT:  http://minio:9000
+      AWS_USE_PATH_STYLE_ENDPOINT: "true"
+    volumes:
+      - backend-storage:/var/www/storage
+    expose: ["9000"]   # FastCGI consommé par nginx-edge
+    depends_on:
+      postgres:   { condition: service_healthy }
+      redis:      { condition: service_healthy }
+      minio-init: { condition: service_completed_successfully }
+    networks: [bet]
+    restart: unless-stopped
+    healthcheck:
+      # cgi-fcgi est dispo via le paquet php-fpm officiel ; sinon on fallback sur tcp
+      test:     ["CMD-SHELL", "php -r \"exit(@fsockopen('127.0.0.1', 9000) ? 0 : 1);\""]
+      interval: 15s
+      timeout:  3s
+      retries:  5
+
+  backend-queue:
+    image: bet/backend:latest
+    command: ["php", "artisan", "queue:work", "--tries=3", "--timeout=120", "--sleep=1", "--max-jobs=1000"]
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      APP_ENV:       production
+      DB_HOST:       postgres
+      REDIS_HOST:    redis
+      AWS_ENDPOINT:  http://minio:9000
+      AWS_USE_PATH_STYLE_ENDPOINT: "true"
+    volumes:
+      - backend-storage:/var/www/storage
+    depends_on:
+      backend-php: { condition: service_started }
+    networks: [bet]
+    restart: unless-stopped
+
+  backend-reverb:
+    image: bet/backend:latest
+    command: ["php", "artisan", "reverb:start", "--host=0.0.0.0", "--port=8080", "--no-interaction"]
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      APP_ENV:    production
+      DB_HOST:    postgres
+      REDIS_HOST: redis
+    volumes:
+      - backend-storage:/var/www/storage
+    expose: ["8080"]   # WebSocket Pusher proxifié par nginx-edge sur /app/ et /apps/
+    depends_on:
+      backend-php: { condition: service_started }
+    networks: [bet]
+    restart: unless-stopped
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # nginx-edge — single entry point :80
+  # ───────────────────────────────────────────────────────────────────────────
+  # Le build Next.js (output: 'export') est fait DANS ce Dockerfile en stage
+  # multi-étapes. Pas de service frontend séparé en prod.
+
+  nginx-edge:
+    build:
+      context: .
+      dockerfile: infra/docker/nginx/Dockerfile.prod
+      args:
+        NEXT_PUBLIC_API_URL:          /api/v1
+        NEXT_PUBLIC_MAPBOX_TOKEN:     ${NEXT_PUBLIC_MAPBOX_TOKEN:-}
+        NEXT_PUBLIC_REVERB_APP_KEY:   ${REVERB_APP_KEY}
+        # Vide → pusher-js prend window.location.hostname automatiquement
+        NEXT_PUBLIC_REVERB_HOST:      ${NEXT_PUBLIC_REVERB_HOST:-}
+        NEXT_PUBLIC_REVERB_PORT:      ${NEXT_PUBLIC_REVERB_PORT:-80}
+        NEXT_PUBLIC_REVERB_SCHEME:    ${NEXT_PUBLIC_REVERB_SCHEME:-ws}
+        NEXT_PUBLIC_POLL_INTERVAL_MS: ${NEXT_PUBLIC_POLL_INTERVAL_MS:-5000}
+        NEXT_PUBLIC_DEFAULT_LAT:      ${NEXT_PUBLIC_DEFAULT_LAT:-14.6928}
+        NEXT_PUBLIC_DEFAULT_LNG:      ${NEXT_PUBLIC_DEFAULT_LNG:--17.4467}
+    image: bet/nginx-edge:latest
+    ports:
+      - "${HTTP_PORT:-80}:80"
+    depends_on:
+      backend-php:    { condition: service_healthy }
+      backend-reverb: { condition: service_started }
+    networks: [bet]
+    restart: unless-stopped
