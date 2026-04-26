@@ -152,12 +152,14 @@ Route::prefix('v1')->group(function () {
             Route::post('users/{user}/reset-password',   [\App\Http\Controllers\UserController::class, 'resetPassword']);
             Route::get('users/{user}/missions-history',  [\App\Http\Controllers\UserController::class, 'missionsHistory']);
 
-            // Dashboard
+            // Dashboard coordinateur
             Route::prefix('dashboard')->group(function () {
-                Route::get('kpis',           [\App\Http\Controllers\Coordinator\DashboardController::class, 'kpis']);
-                Route::get('incidents/live', [\App\Http\Controllers\Coordinator\DashboardController::class, 'incidentsLive']);
-                Route::get('agents/live',    [\App\Http\Controllers\Coordinator\DashboardController::class, 'agentsLive']);
+                Route::get('kpis',                       [\App\Http\Controllers\Coordinator\DashboardController::class, 'kpis']);
+                Route::get('incidents/live',             [\App\Http\Controllers\Coordinator\DashboardController::class, 'incidentsLive']);
+                Route::get('agents/live',                [\App\Http\Controllers\Coordinator\DashboardController::class, 'agentsLive']);
                 Route::get('alertes/pending-duplicates', [\App\Http\Controllers\Coordinator\DashboardController::class, 'pendingDuplicates']);
+                Route::get('timeline',                   [\App\Http\Controllers\Coordinator\DashboardController::class, 'timeline']);
+                Route::get('shift-report',               [\App\Http\Controllers\Coordinator\DashboardController::class, 'shiftReport']);
             });
         });
 
@@ -184,6 +186,19 @@ Route::prefix('v1')->group(function () {
 
             // Audit
             Route::get('audit-logs', [\App\Http\Controllers\Admin\AuditLogController::class, 'index']);
+
+            // Dashboard administrateur (BI)
+            Route::prefix('dashboard/admin')->group(function () {
+                Route::get('kpis',                          [\App\Http\Controllers\Admin\DashboardController::class, 'kpis']);
+                Route::get('analytics/alertes-volume',      [\App\Http\Controllers\Admin\AnalyticsController::class, 'alertesVolume']);
+                Route::get('analytics/incidents-trend',     [\App\Http\Controllers\Admin\AnalyticsController::class, 'incidentsTrend']);
+                Route::get('analytics/agents-performance', [\App\Http\Controllers\Admin\AnalyticsController::class, 'agentsPerformance']);
+                Route::get('analytics/heatmap',             [\App\Http\Controllers\Admin\AnalyticsController::class, 'heatmap']);
+                Route::get('analytics/sources',             [\App\Http\Controllers\Admin\AnalyticsController::class, 'sourcesBreakdown']);
+                Route::get('analytics/processing-time',     [\App\Http\Controllers\Admin\AnalyticsController::class, 'processingTime']);
+                Route::get('analytics/duplicates',          [\App\Http\Controllers\Admin\AnalyticsController::class, 'duplicatesRate']);
+                Route::get('phone-tracking/stats',          [\App\Http\Controllers\Admin\PhoneTrackingController::class, 'stats']);
+            });
         });
     });
 });
