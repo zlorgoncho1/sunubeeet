@@ -256,6 +256,49 @@ export interface TrackingEvent {
   occurred_at: string;
 }
 
+// ── Création d'alerte (POST /alertes — F2 App, et POST /qr/alertes — F1) ─
+//
+// Aligné sur prompt/TYPES.md §26.1 (request) + §25.2 (response envelope).
+// La réponse partage la même forme entre F1 et F2 ; les champs `tracking_token`
+// et `tracking_expires_at` ne sont remplis que pour le flow QR (F1).
+
+export interface CreateAlerteRequest {
+  category: AlerteCategory;
+  sub_category?: SubCategory | null;
+  description?: string | null;
+  photo_media_id?: string | null;
+  audio_media_id?: string | null;
+  /** Position GPS du device (F2) ou héritée du QR token côté serveur (F1, optionnel ici). */
+  latitude: number;
+  longitude: number;
+  /** Optionnel — token QR si l'alerte est créée depuis un scan en complément du JWT. */
+  qr_token?: string | null;
+  /** Optionnel — fingerprint client pour anti-spam complémentaire. */
+  client_fingerprint?: string;
+}
+
+export interface CreateAlerteResponse {
+  data: {
+    alerte: Pick<
+      Alerte,
+      | "id"
+      | "reference"
+      | "status"
+      | "is_potential_duplicate"
+      | "category"
+      | "latitude"
+      | "longitude"
+      | "created_at"
+      | "duplicate_of_alerte_id"
+    >;
+    /** F1 uniquement — token de suivi anonyme par téléphone. */
+    tracking_token?: string;
+    tracking_expires_at?: string;
+    /** Présent si is_potential_duplicate=true — message à afficher au spectateur. */
+    warning?: string;
+  };
+}
+
 // ── API envelope ──────────────────────────────────────────────────────
 
 export interface ApiPaginationLinks {

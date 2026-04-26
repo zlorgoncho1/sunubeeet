@@ -6,12 +6,6 @@ const nextConfig = {
   output: "export",
   images: { unoptimized: true },
   trailingSlash: true,
-  // ⚠ TEMPORAIRE — désactive les erreurs TS/ESLint au build pour absorber les
-  // imports cassés introduits par les commits amont (CreateAlerteForm.tsx,
-  // useCreateAlerte hook manquant, types non exportés…). À retirer dès que le
-  // typecheck passe à nouveau côté équipe frontend.
-  typescript: { ignoreBuildErrors: true },
-  eslint:     { ignoreDuringBuilds: true },
 };
 
 module.exports = nextConfig;

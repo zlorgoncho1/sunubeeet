@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { alertesApi, type TimelineEvent } from "@/lib/api/services/alertes";
 import { useApi } from "@/lib/hooks/useApi";
-import { useAuth } from "@/lib/auth/useAuth";
+import { getAccessToken } from "@/lib/auth/tokens";
 import {
   ALERTE_STATUS_LABELS,
   CATEGORY_ICONS,
@@ -50,7 +50,15 @@ function formatDate(iso: string): string {
 }
 
 export default function HistoriquePage() {
-  const { authenticated, loading: authLoading } = useAuth();
+  // Auth state minimal inline (pas de hook partagé : la logique fait ≈5 lignes
+  // et reste self-contained). Si l'app gagne 3+ consommateurs, factoriser.
+  const [authLoading, setAuthLoading] = useState(true);
+  const [authenticated, setAuthenticated] = useState(false);
+  useEffect(() => {
+    setAuthenticated(Boolean(getAccessToken()));
+    setAuthLoading(false);
+  }, []);
+
   const { data, loading, error, refetch } = useApi(
     () => alertesApi.listMine({ page: 1 }),
     [],

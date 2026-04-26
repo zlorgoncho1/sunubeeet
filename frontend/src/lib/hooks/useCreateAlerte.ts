@@ -24,7 +24,7 @@ export const useCreateAlerte = () => {
         setState({ isLoading: false, error: null, data: response });
 
         // Log pour debug
-        console.log("Alerte créée avec succès:", response.data.reference);
+        console.log("Alerte créée avec succès:", response.data.alerte.reference);
 
         return response;
       } catch (error) {

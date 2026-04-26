@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/lib/auth/useAuth";
-import type { UserRole } from "@/lib/types";
+import { getAccessToken, getCurrentUser } from "@/lib/auth/tokens";
+import type { AuthUser, UserRole } from "@/lib/types";
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -15,10 +15,29 @@ interface AuthGuardProps {
 
 /**
  * Garde côté client. Pour un MVP — pas de SSR redirect, mais simple et suffisant.
+ *
+ * État d'authentification lu directement depuis lib/auth/tokens. Pas de hook
+ * useAuth partagé : la logique est inline (≈10 lignes), réutilisée par
+ * historique/page.tsx selon le même pattern.
  */
 export default function AuthGuard({ children, roles, redirectTo = "/auth/login" }: AuthGuardProps) {
-  const { authenticated, user, loading, hasRole } = useAuth();
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
+
+  useEffect(() => {
+    setUser(getCurrentUser());
+    setLoading(false);
+
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "bet.user") setUser(getCurrentUser());
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
+  const authenticated = typeof window !== "undefined" && Boolean(getAccessToken());
+  const hasRole = (...allowed: UserRole[]) => Boolean(user && allowed.includes(user.role));
 
   useEffect(() => {
     if (loading) return;
@@ -29,7 +48,10 @@ export default function AuthGuard({ children, roles, redirectTo = "/auth/login" 
     if (roles && roles.length > 0 && user && !hasRole(...roles)) {
       router.replace("/");
     }
-  }, [authenticated, loading, user, roles, hasRole, redirectTo, router]);
+    // hasRole est dérivé de `user` — on n'inclut pas dans les deps pour éviter
+    // une nouvelle référence à chaque render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authenticated, loading, user, roles, redirectTo, router]);
 
   if (loading || !authenticated) {
     return (

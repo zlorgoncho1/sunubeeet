@@ -6,7 +6,8 @@ import { CreateAlerteRequest, CreateAlerteResponse, AlerteCategory, ApiError } f
 import { useGeolocation } from "@/lib/hooks/useGeolocation";
 
 interface CreateAlerteFormProps {
-  onSuccess?: (alerte: CreateAlerteResponse["data"]) => void;
+  /** Reçoit l'alerte créée (sans l'enveloppe `data`). */
+  onSuccess?: (alerte: CreateAlerteResponse["data"]["alerte"]) => void;
   onError?: (error: ApiError) => void;
 }
 
@@ -40,7 +41,7 @@ export default function CreateAlerteForm({ onSuccess, onError }: CreateAlerteFor
 
     try {
       const response = await mutate(payload);
-      onSuccess?.(response.data);
+      onSuccess?.(response.data.alerte);
     } catch (err) {
       onError?.(err as ApiError);
     }
@@ -51,18 +52,18 @@ export default function CreateAlerteForm({ onSuccess, onError }: CreateAlerteFor
     reset();
   };
 
-  if (data?.data) {
+  if (data?.data?.alerte) {
     return (
       <div className="p-6 bg-green-50 border border-green-200 rounded-lg">
         <h3 className="text-lg font-semibold text-green-800 mb-2">
           ✅ Alerte créée avec succès !
         </h3>
         <p className="text-green-700 mb-4">
-          Référence: <strong>{data.data.reference}</strong>
+          Référence: <strong>{data.data.alerte.reference}</strong>
         </p>
-        {data.warning && (
+        {data.data.warning && (
           <p className="text-yellow-700 bg-yellow-50 p-3 rounded border border-yellow-200">
-            ⚠️ {data.warning}
+            ⚠️ {data.data.warning}
           </p>
         )}
         <button
@@ -108,7 +109,7 @@ export default function CreateAlerteForm({ onSuccess, onError }: CreateAlerteFor
           Description
         </label>
         <textarea
-          value={formData.description}
+          value={formData.description ?? ""}
           onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
           placeholder="Décrivez l'incident..."
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
