@@ -1,2 +1,37 @@
+# CLAUDE.md
 *CLAUDE.md
+# Logs
 *.log
+# Frontend dependencies
+frontend/node_modules/
+frontend/.next/
+frontend/.env.local
+frontend/.env.*.local
+frontend/out.html
+# Backend dependencies
+backend/api/vendor/
+backend/api/.env.local
+backend/api/storage/logs/
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+# OS
+.DS_Store
+Thumbs.db
+# Build outputs
+dist/
+build/
+# Environment files
+.env
+.env.local
+.env.*.local
+# Test coverage
+coverage/
+# Cache directories
+.cache/
+# AI/ML models
+ml/models/
+ml/data/
