@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Step1Categories, { CategoryKey } from "@/components/AlertSheet/Step1Categories";
 import Step2SubCategories from "@/components/AlertSheet/Step2SubCategories";
@@ -30,9 +30,32 @@ interface SubmittedAlerte {
   is_potential_duplicate: boolean;
 }
 
-export default function QRPage() {
-  const params = useParams<{ token: string }>();
-  const token = typeof params?.token === "string" ? params.token : "";
+export default function QRPageWrapper() {
+  // useSearchParams nécessite un Suspense boundary en static export.
+  return (
+    <Suspense fallback={<QRLoading />}>
+      <QRPage />
+    </Suspense>
+  );
+}
+
+function QRLoading() {
+  return (
+    <div className="min-h-screen bg-[#0e1419] flex items-center justify-center font-manrope font-light antialiased">
+      <div className="flex flex-col items-center gap-4">
+        <svg className="w-8 h-8 animate-spin text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="12" cy="12" r="10" strokeOpacity="0.2" />
+          <path d="M12 2a10 10 0 0110 10" />
+        </svg>
+        <p className="text-white/40 text-sm">Validation du QR…</p>
+      </div>
+    </div>
+  );
+}
+
+function QRPage() {
+  const searchParams = useSearchParams();
+  const token = searchParams?.get("token") ?? "";
 
   const [stage, setStage] = useState<Stage>("loading");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);

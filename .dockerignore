@@ -1,0 +1,63 @@
+# ─── Bët — .dockerignore racine ─────────────────────────────────────────────
+# Réduit le build context envoyé au daemon Docker. Critique pour la perf des builds.
+
+# Git / IDE / OS
+.git
+.gitignore
+.gitattributes
+.idea
+.vscode
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Documentation / specs (jamais nécessaires dans les images)
+CLAUDE.md
+*CLAUDE.md
+README.md
+prompt
+bi
+ml
+mobile
+
+# Env (jamais dans les images — montés au runtime)
+.env
+.env.*
+!.env.dev.example
+!.env.prod.example
+
+# Compose & infra (lus depuis le host, pas envoyés au context)
+docker-compose*.yml
+Makefile
+
+# Backend — exclusions
+backend/api/vendor
+backend/api/node_modules
+backend/api/storage/logs
+backend/api/storage/framework/cache
+backend/api/storage/framework/sessions
+backend/api/storage/framework/views
+backend/api/bootstrap/cache/*.php
+backend/api/.env
+backend/api/.env.local
+backend/api/.env.testing
+# ⚠ NE PAS exclure backend/api/.env.example — l'entrypoint en a besoin pour
+# créer /var/www/.env au boot (Laravel écrit dedans via key:generate, etc.)
+backend/api/.phpunit.cache
+backend/api/.phpunit.result.cache
+
+# Frontend — exclusions
+frontend/node_modules
+frontend/.next
+frontend/out
+frontend/.env.local
+frontend/.env.*.local
+
+# Build artifacts génériques
+dist
+build
+coverage
+.cache
+*.log

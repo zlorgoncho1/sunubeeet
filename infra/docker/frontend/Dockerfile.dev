@@ -1,0 +1,23 @@
+# syntax=docker/dockerfile:1.7
+#
+# Image dev : `next dev` avec bind-mount du code. node_modules est pré-installé
+# pour démarrage rapide ; il sera shadow-mount par un volume nommé en compose
+# pour que les binaries natifs (esbuild, swc) restent corrects sur Linux même
+# si le host est macOS.
+
+FROM node:20-alpine
+
+WORKDIR /app
+
+RUN apk add --no-cache libc6-compat
+
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci --no-audit --prefer-offline
+
+# Le code sera bind-mounté par compose (./frontend → /app), node_modules
+# protégé par un volume nommé pour ne pas être écrasé.
+EXPOSE 3000
+
+ENV NEXT_TELEMETRY_DISABLED=1
+
+CMD ["npm", "run", "dev"]

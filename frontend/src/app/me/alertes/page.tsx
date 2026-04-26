@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import AuthGuard from "@/components/ui/AuthGuard";
 import { alertesApi, type TimelineEvent, type TimelineResponse } from "@/lib/api/services/alertes";
 import { ALERTE_STATUS_LABELS, CATEGORY_LABELS } from "@/lib/i18n/labels";
@@ -26,24 +26,30 @@ const ACTION_LABELS: Record<string, string> = {
 export default function AlerteTimelinePage() {
   return (
     <AuthGuard>
-      <Inner />
+      <Suspense fallback={<p className="text-white/40 text-center py-10">Chargement…</p>}>
+        <Inner />
+      </Suspense>
     </AuthGuard>
   );
 }
 
 function Inner() {
-  const params = useParams<{ id: string }>();
-  const id = params?.id;
+  const searchParams = useSearchParams();
+  const id = searchParams?.get("id") ?? null;
   const [data, setData] = useState<TimelineResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!id) return;
+    if (!id) {
+      setLoading(false);
+      setError("Identifiant d'alerte manquant.");
+      return;
+    }
     let cancelled = false;
     (async () => {
       try {
-        const res = await alertesApi.timeline(id as string);
+        const res = await alertesApi.timeline(id);
         if (!cancelled) setData(res);
       } catch (e) {
         if (!cancelled) setError((e as ApiError).message ?? "Échec du chargement");
