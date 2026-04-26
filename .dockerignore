@@ -19,8 +19,8 @@ CLAUDE.md
 README.md
 prompt
 bi
-ml
 mobile
+# ⚠ ml/ N'EST PAS exclu (image ml-api en a besoin) — exclusions ciblées plus bas
 
 # Env (jamais dans les images — montés au runtime)
 .env
@@ -54,6 +54,22 @@ frontend/.next
 frontend/out
 frontend/.env.local
 frontend/.env.*.local
+
+# ML API — exclusions runtime (interfaces de demo, tests, docs hors runtime)
+ml/__pycache__
+ml/**/__pycache__
+ml/.venv
+ml/venv
+ml/test_*.py
+ml/dashboard.html
+ml/interface_simple.html
+ml/test_interface.html
+ml/PRET_POUR_LIVRAISON.txt
+ml/WORKFLOW_IA_COMPLETE.md
+ml/Procfile
+ml/.env
+ml/.env.local
+# ne PAS exclure ml/.env.example — sert de référence dev native
 
 # Build artifacts génériques
 dist

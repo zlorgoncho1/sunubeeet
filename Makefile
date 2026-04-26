@@ -2,13 +2,19 @@
 # 6 cibles : up / down / build  ×  dev (défaut) / prod
 # Override de service via la variable `s` (un ou plusieurs services compose).
 #
-#   make up                          # dev complet
-#   make up s=frontend               # dev frontend seul
-#   make up s="backend backend-reverb backend-queue"
-#   make build                       # rebuild dev
+# Services dispo : postgres, redis, minio, minio-init, backend, backend-queue,
+#                  backend-reverb, ml-api, frontend (dev) / nginx-edge (prod)
+#
+#   make up                                  # dev complet
+#   make up s=frontend                       # frontend seul
+#   make up s=ml-api                         # microservice ML seul
+#   make up s="backend backend-queue backend-reverb"
+#   make up s="postgres redis minio minio-init"   # data layer pour devs natifs
+#   make build                               # rebuild dev (toutes les images)
+#   make build s=ml-api                      # rebuild une image
 #   make down
 #
-#   make up-prod                     # 1-click déploiement prod
+#   make up-prod                             # 1-click déploiement prod
 #   make build-prod
 #   make down-prod
 

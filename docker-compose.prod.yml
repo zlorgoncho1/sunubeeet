@@ -182,6 +182,37 @@ services:
     restart: unless-stopped
 
   # ───────────────────────────────────────────────────────────────────────────
+  # ML API — microservice FastAPI Python
+  # Joint UNIQUEMENT par backend-php via http://ml-api:5000 (réseau interne).
+  # AUCUN port hôte — cohérent avec la politique nginx-edge single entry.
+  # ───────────────────────────────────────────────────────────────────────────
+
+  ml-api:
+    build:
+      context: .
+      dockerfile: infra/docker/ml-api/Dockerfile
+    image: bet/ml-api:latest
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      PORT:             "5000"
+      WEB_CONCURRENCY:  "${WEB_CONCURRENCY:-2}"
+      GROQ_API_KEY:     ${GROQ_API_KEY}
+      OPENAI_API_KEY:   ${OPENAI_API_KEY}
+      DEEPGRAM_API_KEY: ${DEEPGRAM_API_KEY}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
+    expose: ["5000"]   # interne, consommé par backend-php
+    networks: [bet]
+    restart: unless-stopped
+    healthcheck:
+      test:     ["CMD", "curl", "-fsS", "http://localhost:5000/health"]
+      interval: 15s
+      timeout:  3s
+      retries:  5
+      start_period: 30s
+
+  # ───────────────────────────────────────────────────────────────────────────
   # nginx-edge — single entry point :80
   # ───────────────────────────────────────────────────────────────────────────
   # Le build Next.js (output: 'export') est fait DANS ce Dockerfile en stage

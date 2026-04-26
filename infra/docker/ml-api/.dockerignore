@@ -1,0 +1,17 @@
+# NB : Docker lit le .dockerignore au RACINE du build context, pas ici.
+# Ce fichier est conservé pour documentation des exclusions souhaitées pour
+# l'image ml-api ; les patterns effectifs sont dans le .dockerignore racine.
+
+ml/__pycache__
+ml/**/__pycache__
+ml/.venv
+ml/venv
+ml/test_*.py
+ml/dashboard.html
+ml/interface_simple.html
+ml/test_interface.html
+ml/PRET_POUR_LIVRAISON.txt
+ml/WORKFLOW_IA_COMPLETE.md
+ml/Procfile
+ml/.env
+ml/.env.local

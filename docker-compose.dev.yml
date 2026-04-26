@@ -192,6 +192,43 @@ services:
     restart: unless-stopped
 
   # ───────────────────────────────────────────────────────────────────────────
+  # ML API — microservice FastAPI Python (classification incidents)
+  # Joint UNIQUEMENT par backend-php via http://ml-api:5000.
+  # En dev on l'expose aussi sur l'hôte pour /docs et tests directs.
+  # ───────────────────────────────────────────────────────────────────────────
+
+  ml-api:
+    build:
+      context: .
+      dockerfile: infra/docker/ml-api/Dockerfile
+    image: bet/ml-api:dev
+    # Override du CMD prod (gunicorn) → uvicorn --reload pour hot reload Python
+    command: ["uvicorn", "ml.api.app:app", "--host", "0.0.0.0", "--port", "5000", "--reload", "--reload-dir", "/app/ml"]
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      PORT:             "5000"
+      GROQ_API_KEY:     ${GROQ_API_KEY:-}
+      OPENAI_API_KEY:   ${OPENAI_API_KEY:-}
+      DEEPGRAM_API_KEY: ${DEEPGRAM_API_KEY:-}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+    volumes:
+      - ./ml:/app/ml                       # bind-mount = hot reload Python
+    ports:
+      # Défaut 5050 pour éviter le conflit avec AirPlay Receiver sur macOS Monterey+
+      # (qui squatte :5000). Override via ML_API_PORT dans .env si besoin.
+      - "${ML_API_PORT:-5050}:5000"
+    networks: [bet]
+    restart: unless-stopped
+    healthcheck:
+      test:     ["CMD", "curl", "-fsS", "http://localhost:5000/health"]
+      interval: 15s
+      timeout:  3s
+      retries:  5
+      start_period: 20s
+
+  # ───────────────────────────────────────────────────────────────────────────
   # Frontend — next dev avec hot reload
   # ───────────────────────────────────────────────────────────────────────────
 

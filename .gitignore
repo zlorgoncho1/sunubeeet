@@ -201,8 +201,9 @@ yarn.lock
 # ==============================================================================
 # DOCKER
 # ==============================================================================
-.dockerignore
-Dockerfile
+# ⚠ Patterns globaux `.dockerignore` et `Dockerfile` retirés — c'est anti-pattern :
+# ce sont des fichiers de config qui DOIVENT être versionnés. Sinon `infra/docker/`
+# perd silencieusement les images custom (ml-api, frontend dev, nginx-edge…).
 docker-compose.override.yml
 .docker/
 .dockercontainerid
