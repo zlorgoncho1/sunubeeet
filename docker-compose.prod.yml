@@ -1,6 +1,16 @@
 # ─── Bët — Compose PROD ─────────────────────────────────────────────────────
-# Stack production : 1 seul port hôte exposé (nginx-edge sur :80) + console
-# MinIO en option pour ops.
+# Stack production : UN SEUL port hôte exposé → nginx-edge sur :80.
+# Tous les autres services restent en réseau interne `bet` (résolution DNS
+# Docker entre containers, aucun binding hôte).
+#
+# Les directives `expose:` sont purement déclaratives (documentation des ports
+# écoutés par chaque service) — fonctionnellement Docker DNS permet déjà toute
+# communication intra-network sans elles.
+#
+# Accès console MinIO (ops uniquement) :
+#   docker compose -f docker-compose.prod.yml exec minio sh             # shell direct
+#   ssh -L 9001:minio:9001 user@prod-host                               # tunnel SSH
+#   ou ajouter temporairement un mapping `ports: ["9001:9001"]` au service minio
 #
 # Cycle de déploiement 1-click :
 #   docker compose -f docker-compose.prod.yml build
@@ -37,6 +47,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - postgres-data:/var/lib/postgresql/data
+    expose: ["5432"]
     healthcheck:
       test:     ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 10s
@@ -50,6 +61,7 @@ services:
     command: ["redis-server", "--save", "60", "1", "--loglevel", "warning", "--maxmemory-policy", "allkeys-lru"]
     volumes:
       - redis-data:/data
+    expose: ["6379"]
     healthcheck:
       test:     ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -68,9 +80,9 @@ services:
       # ex. MINIO_SERVER_URL=https://app.bet.sn (les URLs signées utiliseront ce host)
     volumes:
       - minio-data:/data
-    ports:
-      # Console MinIO exposée pour ops uniquement. À fermer en vrai prod.
-      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    expose:
+      - "9000"   # S3 API (consommé par nginx-edge via /media/ et par backend pour signer)
+      - "9001"   # Console UI (accès ops via tunnel SSH ou docker exec, pas de port hôte)
     healthcheck:
       test:     ["CMD", "curl", "-fsS", "http://localhost:9000/minio/health/live"]
       interval: 10s
@@ -118,6 +130,7 @@ services:
       AWS_USE_PATH_STYLE_ENDPOINT: "true"
     volumes:
       - backend-storage:/var/www/storage
+    expose: ["9000"]   # FastCGI consommé par nginx-edge
     depends_on:
       postgres:   { condition: service_healthy }
       redis:      { condition: service_healthy }
@@ -162,6 +175,7 @@ services:
       REDIS_HOST: redis
     volumes:
       - backend-storage:/var/www/storage
+    expose: ["8080"]   # WebSocket Pusher proxifié par nginx-edge sur /app/ et /apps/
     depends_on:
       backend-php: { condition: service_started }
     networks: [bet]
