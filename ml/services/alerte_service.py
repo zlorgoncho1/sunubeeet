@@ -183,7 +183,10 @@ def creer_alerte(
     
     print(f"\n🤖 Lancement IA en background...")
     print(f"   L'analyse se fera en arrière-plan")
-    # TODO: Lancer une task async ici (Celery ou équivalent)
+    
+    # Lancer le traitement IA en background
+    from ml.services.ia_background_processor import creer_task_ia_async
+    creer_task_ia_async(alerte_id, alerte)
     
     return AlerteResponse(
         alerte_id=alerte_id,
