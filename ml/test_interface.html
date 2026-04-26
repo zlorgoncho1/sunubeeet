@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 Bët ML - Test Interface</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            animation: slideIn 0.5s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 6px;
+            font-size: 0.95em;
+        }
+        
+        input, textarea, select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 0.95em;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+        
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        button {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.95em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+        
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+        
+        .response-section {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            animation: slideIn 0.5s ease-out;
+        }
+        
+        .response-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+        
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            color: #667eea;
+            font-weight: 600;
+        }
+        
+        .spinner {
+            border: 3px solid #f0f0f0;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .result-box {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .result-box.error {
+            border-left-color: #e74c3c;
+            background: #fdf8f7;
+        }
+        
+        .result-box.success {
+            border-left-color: #27ae60;
+            background: #f7fdf9;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-right: 10px;
+        }
+        
+        .status-ok {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status-loading {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .metric {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .metric-value {
+            font-size: 1.8em;
+            font-weight: 700;
+        }
+        
+        .metric-label {
+            font-size: 0.85em;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .tab {
+            padding: 12px 20px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-weight: 600;
+            color: #999;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+        
+        .tab:hover {
+            color: #667eea;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .two-col {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="container">
+        <div class="header">
+            <h1>🎯 Bët ML Test Interface</h1>
+            <p>Testez l'API de classification d'incidents en temps réel</p>
+        </div>
+        
+        <!-- Métriques -->
+        <div class="metrics">
+            <div class="metric">
+                <div class="metric-value">{{ stats.totalRequests }}</div>
+                <div class="metric-label">Requêtes</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value">{{ stats.successRequests }}</div>
+                <div class="metric-label">Succès</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value">{{ stats.avgTime }}ms</div>
+                <div class="metric-label">Temps moy.</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value">{{ apiStatus }}</div>
+                <div class="metric-label">État API</div>
+            </div>
+        </div>
+        
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab" :class="{ active: activeTab === 'classifier' }" @click="activeTab = 'classifier'">
+                📋 Classifier
+            </button>
+            <button class="tab" :class="{ active: activeTab === 'health' }" @click="activeTab = 'health'">
+                ❤️ Health Check
+            </button>
+        </div>
+        
+        <!-- Tab: Classifier -->
+        <div class="tab-content" :class="{ active: activeTab === 'classifier' }">
+            <div class="main-grid">
+                <!-- Formulaire -->
+                <div class="card">
+                    <h2>📝 Formulaire Classifier</h2>
+                    
+                    <div class="form-group">
+                        <label>Catégorie</label>
+                        <select v-model="form.categorie">
+                            <option>médical</option>
+                            <option>sécurité</option>
+                            <option>foule</option>
+                            <option>technique</option>
+                            <option>incendie</option>
+                            <option>autre</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea v-model="form.description" placeholder="Décrivez l'incident..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Audio Base64 (optionnel)</label>
+                        <textarea v-model="form.audio_base64" placeholder="Coller l'audio en base64..."></textarea>
+                    </div>
+                    
+                    <div class="two-col">
+                        <div class="form-group">
+                            <label>Signalements similaires</label>
+                            <input type="number" v-model.number="form.nb_signalements_similaires" min="0" max="10">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>ID Spectateur</label>
+                            <input type="text" v-model="form.spectateur_id" placeholder="USR_123">
+                        </div>
+                    </div>
+                    
+                    <div class="two-col">
+                        <div class="form-group">
+                            <label>Total historique</label>
+                            <input type="number" v-model.number="form.historique.total" min="0" max="100">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Historique valides</label>
+                            <input type="number" v-model.number="form.historique.valides" min="0" max="100">
+                        </div>
+                    </div>
+                    
+                    <div class="button-group">
+                        <button class="btn-primary" @click="classifyIncident" :disabled="loading">
+                            <span v-if="!loading">🚀 Classifier</span>
+                            <span v-else>Chargement...</span>
+                        </button>
+                        <button class="btn-secondary" @click="resetForm">🔄 Réinitialiser</button>
+                    </div>
+                </div>
+                
+                <!-- Résultats -->
+                <div class="card">
+                    <h2>📊 Résultats</h2>
+                    
+                    <div v-if="loading" class="loading">
+                        <div class="spinner"></div>
+                        <span>Traitement en cours...</span>
+                    </div>
+                    
+                    <div v-else-if="lastResponse">
+                        <div v-if="lastResponse.error" class="result-box error">
+                            <strong>❌ Erreur :</strong> {{ lastResponse.error }}
+                        </div>
+                        
+                        <div v-else class="result-box success">
+                            <div style="margin-bottom: 10px;">
+                                <span class="status-badge status-ok">✅ Succès</span>
+                                <span style="color: #666;">{{ responseTime }}ms</span>
+                            </div>
+                            
+                            <div style="margin-top: 15px;">
+                                <strong>Catégorie :</strong> {{ lastResponse.categorie }}<br>
+                                <strong>Gravité :</strong> 
+                                <span :style="{ color: getGraviteColor(lastResponse.gravite) }">
+                                    {{ lastResponse.gravite }}
+                                </span><br>
+                                <strong>Résumé :</strong> {{ lastResponse.resume }}<br>
+                                <strong>Action :</strong> {{ lastResponse.action_recommandee }}<br>
+                                <strong>Décision :</strong> {{ lastResponse.decision.statut }}<br>
+                                <strong>Crédibilité :</strong> {{ lastResponse.credibilite.score }}/100
+                                <span :style="{ color: getCreditColor(lastResponse.credibilite.score) }">({{ lastResponse.credibilite.niveau }})</span><br>
+                                <strong>Source IA :</strong> {{ lastResponse.source_ia }}<br>
+                            </div>
+                            
+                            <details style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e0e0e0;">
+                                <summary style="cursor: pointer; font-weight: 600;">📋 Raisons crédibilité</summary>
+                                <ul style="margin-top: 10px; margin-left: 20px;">
+                                    <li v-for="raison in lastResponse.credibilite.raisons" :key="raison">
+                                        {{ raison }}
+                                    </li>
+                                </ul>
+                            </details>
+                        </div>
+                    </div>
+                    
+                    <div v-else style="text-align: center; color: #999; padding: 40px 0;">
+                        Aucun résultat. Remplissez le formulaire et cliquez sur "Classifier"
+                    </div>
+                </div>
+            </div>
+            
+            <!-- JSON brut -->
+            <div class="response-section" v-if="lastResponse">
+                <h3>📄 Réponse JSON brute</h3>
+                <div class="result-box" style="max-height: 500px;">
+                    {{ JSON.stringify(lastResponse, null, 2) }}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tab: Health Check -->
+        <div class="tab-content" :class="{ active: activeTab === 'health' }">
+            <div class="card">
+                <h2>❤️ Health Check</h2>
+                
+                <button class="btn-primary" @click="checkHealth" :disabled="healthLoading" style="margin-bottom: 20px;">
+                    <span v-if="!healthLoading">🔍 Vérifier l'état</span>
+                    <span v-else>Vérification...</span>
+                </button>
+                
+                <div v-if="healthLoading" class="loading">
+                    <div class="spinner"></div>
+                    <span>Vérification en cours...</span>
+                </div>
+                
+                <div v-else-if="healthResponse" class="result-box" :class="{ success: healthResponse.status === 'ok', error: healthResponse.status !== 'ok' }">
+                    <strong>Status :</strong> 
+                    <span :class="{ 'status-ok': healthResponse.status === 'ok', 'status-error': healthResponse.status !== 'ok' }"
+                          style="display: inline-block; padding: 4px 8px; border-radius: 4px; background: rgba(0,0,0,0.1);">
+                        {{ healthResponse.status }}
+                    </span><br>
+                    <strong>Modèles :</strong> {{ healthResponse.modeles }}<br>
+                    <strong>Version :</strong> {{ healthResponse.version }}<br>
+                    <strong>Temps réponse :</strong> {{ healthResponseTime }}ms
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const { createApp } = Vue;
+        
+        createApp({
+            data() {
+                return {
+                    form: {
+                        categorie: 'médical',
+                        description: 'Une personne s\'est évanouie',
+                        audio_base64: '',
+                        spectateur_id: 'USR_TEST_001',
+                        nb_signalements_similaires: 0,
+                        historique: {
+                            total: 5,
+                            valides: 4
+                        }
+                    },
+                    loading: false,
+                    healthLoading: false,
+                    lastResponse: null,
+                    healthResponse: null,
+                    responseTime: 0,
+                    healthResponseTime: 0,
+                    activeTab: 'classifier',
+                    stats: {
+                        totalRequests: 0,
+                        successRequests: 0,
+                        avgTime: 0,
+                        totalTime: 0
+                    },
+                    apiStatus: '✓ OK'
+                };
+            },
+            
+            methods: {
+                async classifyIncident() {
+                    this.loading = true;
+                    const startTime = performance.now();
+                    
+                    try {
+                        const response = await axios.post('http://localhost:5000/classifier', this.form);
+                        const endTime = performance.now();
+                        this.responseTime = Math.round(endTime - startTime);
+                        
+                        this.lastResponse = response.data;
+                        this.updateStats(true, this.responseTime);
+                    } catch (error) {
+                        this.lastResponse = {
+                            error: error.response?.data?.detail || error.message || 'Erreur de connexion'
+                        };
+                        this.updateStats(false, 0);
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                
+                async checkHealth() {
+                    this.healthLoading = true;
+                    const startTime = performance.now();
+                    
+                    try {
+                        const response = await axios.get('http://localhost:5000/health');
+                        const endTime = performance.now();
+                        this.healthResponseTime = Math.round(endTime - startTime);
+                        
+                        this.healthResponse = response.data;
+                        this.apiStatus = '✓ OK';
+                    } catch (error) {
+                        this.healthResponse = {
+                            status: 'error',
+                            error: error.message
+                        };
+                        this.apiStatus = '✗ KO';
+                    } finally {
+                        this.healthLoading = false;
+                    }
+                },
+                
+                resetForm() {
+                    this.form = {
+                        categorie: 'médical',
+                        description: 'Une personne s\'est évanouie',
+                        audio_base64: '',
+                        spectateur_id: 'USR_TEST_001',
+                        nb_signalements_similaires: 0,
+                        historique: {
+                            total: 5,
+                            valides: 4
+                        }
+                    };
+                    this.lastResponse = null;
+                },
+                
+                updateStats(success, time) {
+                    this.stats.totalRequests++;
+                    if (success) {
+                        this.stats.successRequests++;
+                        this.stats.totalTime += time;
+                        this.stats.avgTime = Math.round(this.stats.totalTime / this.stats.successRequests);
+                    }
+                },
+                
+                getCredibiliteColor(gravite) {
+                    const colors = {
+                        'critique': '#e74c3c',
+                        'haute': '#f39c12',
+                        'moyenne': '#f1c40f',
+                        'basse': '#27ae60'
+                    };
+                    return colors[gravite] || '#333';
+                },
+                
+                getCreditColor(score) {
+                    if (score >= 70) return '#27ae60';
+                    if (score >= 50) return '#f39c12';
+                    return '#e74c3c';
+                }
+            },
+            
+            mounted() {
+                // Vérifier l'API au chargement
+                this.checkHealth();
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

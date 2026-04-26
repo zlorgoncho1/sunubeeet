@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Système d'Alerte Bët - Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        header h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: all 0.3s;
+        }
+
+        input[type="text"]:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .categories {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .category-btn {
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .category-btn:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .category-btn.selected {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .media-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+            flex: 1;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .media-preview {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 6px;
+            border: 2px dashed #e0e0e0;
+        }
+
+        .media-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .media-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .media-icon {
+            font-size: 20px;
+        }
+
+        .geo-status {
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 13px;
+            margin-top: 10px;
+        }
+
+        .geo-status.active {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .geo-status.inactive {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert-history {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .alert-item {
+            padding: 15px;
+            border-left: 4px solid #667eea;
+            background: #f9f9f9;
+            border-radius: 6px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .alert-item.duplicate {
+            border-left-color: #ffc107;
+            background: #fff8e1;
+        }
+
+        .alert-item.processing {
+            border-left-color: #28a745;
+            background: #f0f9ff;
+        }
+
+        .alert-item.error {
+            border-left-color: #dc3545;
+            background: #ffe5e5;
+        }
+
+        .alert-ref {
+            font-weight: 700;
+            color: #667eea;
+            font-size: 15px;
+        }
+
+        .alert-status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+
+        .alert-status.duplicate {
+            background: #ffc107;
+            color: white;
+        }
+
+        .alert-status.processing {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .alert-status.error {
+            background: #dc3545;
+            color: white;
+        }
+
+        .alert-timestamp {
+            font-size: 12px;
+            color: #999;
+            margin-top: 8px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 30px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-item {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 40px;
+            margin-bottom: 15px;
+        }
+
+        .input-file-hidden {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .categories {
+                grid-template-columns: 1fr;
+            }
+
+            .media-buttons {
+                grid-template-columns: 1fr;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <h1>🚨 Système d'Alerte Bët</h1>
+            <p>Signalez les incidents en temps réel | Détection automatique des redondances | Analyse IA en arrière-plan</p>
+        </header>
+
+        <!-- Main Grid -->
+        <div class="main-grid">
+            <!-- Formulaire d'alerte -->
+            <div class="card">
+                <h2>📝 Créer une Alerte</h2>
+
+                <div class="error-message" id="errorMessage"></div>
+                <div class="success-message" id="successMessage"></div>
+
+                <form id="alertForm">
+                    <!-- Catégorie -->
+                    <div class="form-group">
+                        <label>🏷️ Catégorie d'Incident *</label>
+                        <div class="categories">
+                            <button type="button" class="category-btn" data-category="medical">
+                                🏥 Médical
+                            </button>
+                            <button type="button" class="category-btn" data-category="securite">
+                                👮 Sécurité
+                            </button>
+                            <button type="button" class="category-btn" data-category="foule">
+                                👥 Foule
+                            </button>
+                            <button type="button" class="category-btn" data-category="technique">
+                                ⚙️ Technique
+                            </button>
+                            <button type="button" class="category-btn" data-category="incendie">
+                                🔥 Incendie
+                            </button>
+                            <button type="button" class="category-btn" data-category="autre">
+                                ❓ Autre
+                            </button>
+                        </div>
+                        <input type="hidden" id="categorie" name="categorie" required>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="form-group">
+                        <label>📝 Description du problème</label>
+                        <textarea id="description" placeholder="Décrivez l'incident en détail..."></textarea>
+                        <small style="color: #999;">Au minimum: description OU audio enregistré</small>
+                    </div>
+
+                    <!-- Médias -->
+                    <div class="form-group">
+                        <label>📸 Médias supplémentaires</label>
+                        <div class="media-buttons">
+                            <button type="button" class="btn btn-secondary" id="recordAudioBtn">
+                                🎤 Audio
+                            </button>
+                            <button type="button" class="btn btn-secondary" id="uploadPhotoBtn">
+                                📷 Photo
+                            </button>
+                            <button type="button" class="btn btn-secondary" id="geolocBtn">
+                                📍 Localisation
+                            </button>
+                        </div>
+
+                        <div class="media-preview" id="mediaPreview" style="display: none;">
+                            <div id="audioPreview"></div>
+                            <div id="photoPreview"></div>
+                            <div id="geoPreview"></div>
+                        </div>
+                    </div>
+
+                    <!-- Submit -->
+                    <button type="submit" class="btn btn-primary" id="submitBtn">
+                        🚀 Envoyer l'Alerte
+                    </button>
+                </form>
+
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p style="margin-top: 15px; color: #667eea;">Envoi en cours...</p>
+                </div>
+            </div>
+
+            <!-- Historique et Statistiques -->
+            <div class="card">
+                <h2>📊 Tableau de Bord</h2>
+
+                <!-- Stats -->
+                <div class="stats">
+                    <div class="stat-item">
+                        <div class="stat-number" id="statTotal">0</div>
+                        <div class="stat-label">Alertes totales</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="statProcessing">0</div>
+                        <div class="stat-label">En traitement</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="statDuplicate">0</div>
+                        <div class="stat-label">Redondances</div>
+                    </div>
+                </div>
+
+                <!-- Historique -->
+                <h3 style="margin-top: 30px; margin-bottom: 15px; color: #333;">Dernières alertes</h3>
+                <div class="alert-history" id="alertHistory">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📭</div>
+                        <p>Aucune alerte pour le moment</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden inputs -->
+    <input type="hidden" id="audioBase64">
+    <input type="hidden" id="photoBase64">
+    <input type="hidden" id="latitude">
+    <input type="hidden" id="longitude">
+    <input type="hidden" id="clientFingerprint">
+    <input type="file" id="photoInput" class="input-file-hidden" accept="image/*">
+
+    <script>
+        const API_URL = 'http://localhost:5000/alerte/';
+        const categoryInput = document.getElementById('categorie');
+        const audioBase64Input = document.getElementById('audioBase64');
+        const photoBase64Input = document.getElementById('photoBase64');
+        const latitudeInput = document.getElementById('latitude');
+        const longitudeInput = document.getElementById('longitude');
+        const form = document.getElementById('alertForm');
+        const loading = document.getElementById('loading');
+        const errorMessage = document.getElementById('errorMessage');
+        const successMessage = document.getElementById('successMessage');
+        const mediaPreview = document.getElementById('mediaPreview');
+        const alertHistory = document.getElementById('alertHistory');
+        const photoInput = document.getElementById('photoInput');
+
+        let mediaRecorder;
+        let audioChunks = [];
+        let alerts = [];
+
+        // Générateur de fingerprint client
+        function generateFingerprint() {
+            const key = 'client_fp_' + window.location.hostname;
+            let fp = localStorage.getItem(key);
+            if (!fp) {
+                fp = 'FP_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+                localStorage.setItem(key, fp);
+            }
+            return fp;
+        }
+
+        document.getElementById('clientFingerprint').value = generateFingerprint();
+
+        // Sélection de catégorie
+        document.querySelectorAll('.category-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                categoryInput.value = btn.dataset.category;
+            });
+        });
+
+        // Enregistrement audio
+        document.getElementById('recordAudioBtn').addEventListener('click', async (e) => {
+            e.preventDefault();
+            const btn = e.target.closest('.btn-secondary');
+
+            if (btn.textContent.includes('⏹')) {
+                mediaRecorder.stop();
+                btn.textContent = '🎤 Audio';
+                return;
+            }
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+
+                mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        audioBase64Input.value = e.target.result.split(',')[1];
+                        updateMediaPreview();
+                    };
+                    reader.readAsDataURL(audioBlob);
+                    stream.getTracks().forEach(track => track.stop());
+                };
+
+                mediaRecorder.start();
+                btn.textContent = '⏹ Arrêter';
+            } catch (err) {
+                showError('Erreur accès microphone: ' + err.message);
+            }
+        });
+
+        // Upload photo
+        document.getElementById('uploadPhotoBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            photoInput.click();
+        });
+
+        photoInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    photoBase64Input.value = event.target.result.split(',')[1];
+                    updateMediaPreview();
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Géolocalisation
+        document.getElementById('geolocBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((pos) => {
+                    latitudeInput.value = pos.coords.latitude;
+                    longitudeInput.value = pos.coords.longitude;
+                    updateMediaPreview();
+                    showSuccess('Localisation obtenue ✅');
+                }, (err) => {
+                    showError('Erreur géolocalisation: ' + err.message);
+                });
+            } else {
+                showError('Géolocalisation non supportée');
+            }
+        });
+
+        function updateMediaPreview() {
+            let hasMedia = false;
+            let html = '';
+
+            mediaPreview.innerHTML = '';
+
+            if (audioBase64Input.value) {
+                html += `<div class="media-item"><span class="media-icon">🎤</span> Audio enregistré ✅</div>`;
+                hasMedia = true;
+            }
+
+            if (photoBase64Input.value) {
+                html += `<div class="media-item"><span class="media-icon">📷</span> Photo uploadée ✅</div>`;
+                hasMedia = true;
+            }
+
+            if (latitudeInput.value && longitudeInput.value) {
+                html += `<div class="media-item"><span class="media-icon">📍</span> ${latitudeInput.value.toFixed(4)}° N, ${longitudeInput.value.toFixed(4)}° E</div>`;
+                hasMedia = true;
+            }
+
+            if (hasMedia) {
+                mediaPreview.innerHTML = html;
+                mediaPreview.style.display = 'block';
+            } else {
+                mediaPreview.style.display = 'none';
+            }
+        }
+
+        // Soumission du formulaire
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const categorie = categoryInput.value;
+            const description = document.getElementById('description').value.trim();
+
+            if (!categorie) {
+                showError('Sélectionnez une catégorie');
+                return;
+            }
+
+            if (!description && !audioBase64Input.value) {
+                showError('Veuillez entrer une description ou enregistrer un audio');
+                return;
+            }
+
+            const payload = {
+                categorie,
+                description: description || null,
+                spectateur_id: 'SPEC_' + Date.now(),
+                audio_base64: audioBase64Input.value || null,
+                photo_base64: photoBase64Input.value || null,
+                latitude: latitudeInput.value ? parseFloat(latitudeInput.value) : null,
+                longitude: longitudeInput.value ? parseFloat(longitudeInput.value) : null,
+                client_fingerprint: document.getElementById('clientFingerprint').value
+            };
+
+            loading.classList.add('show');
+            errorMessage.classList.remove('show');
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alerts.unshift(data);
+                    updateAlertHistory();
+                    updateStats();
+
+                    if (data.is_duplicate) {
+                        showSuccess(`⚠️ Redondance détectée (Doublon de ${data.duplicate_of_reference})`);
+                    } else {
+                        showSuccess(`✅ Alerte créée: ${data.reference}`);
+                    }
+
+                    // Réinitialiser le formulaire
+                    form.reset();
+                    document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('selected'));
+                    categoryInput.value = '';
+                    audioBase64Input.value = '';
+                    photoBase64Input.value = '';
+                    latitudeInput.value = '';
+                    longitudeInput.value = '';
+                    mediaPreview.style.display = 'none';
+                } else {
+                    showError(`Erreur: ${data.message || response.statusText}`);
+                }
+            } catch (error) {
+                showError('Erreur réseau: ' + error.message);
+            } finally {
+                loading.classList.remove('show');
+            }
+        });
+
+        function updateAlertHistory() {
+            if (alerts.length === 0) {
+                alertHistory.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><p>Aucune alerte</p></div>';
+                return;
+            }
+
+            alertHistory.innerHTML = alerts.slice(0, 10).map(alert => `
+                <div class="alert-item ${alert.is_duplicate ? 'duplicate' : alert.status === 'processing' ? 'processing' : ''}">
+                    <div class="alert-ref">${alert.reference}</div>
+                    <small>${alert.message}</small>
+                    <div class="alert-status ${alert.is_duplicate ? 'duplicate' : alert.status === 'processing' ? 'processing' : 'error'}">
+                        ${alert.is_duplicate ? '⚠️ Redondance' : alert.status === 'processing' ? '⏳ Traitement' : '❌ Erreur'}
+                    </div>
+                    ${alert.is_duplicate ? `<div class="alert-timestamp">Doublon de: ${alert.duplicate_of_reference}</div>` : ''}
+                    <div class="alert-timestamp">${new Date(alert.created_at).toLocaleTimeString('fr-FR')}</div>
+                </div>
+            `).join('');
+        }
+
+        function updateStats() {
+            const total = alerts.length;
+            const processing = alerts.filter(a => a.status === 'processing').length;
+            const duplicate = alerts.filter(a => a.is_duplicate).length;
+
+            document.getElementById('statTotal').textContent = total;
+            document.getElementById('statProcessing').textContent = processing;
+            document.getElementById('statDuplicate').textContent = duplicate;
+        }
+
+        function showError(msg) {
+            errorMessage.textContent = msg;
+            errorMessage.classList.add('show');
+            setTimeout(() => errorMessage.classList.remove('show'), 5000);
+        }
+
+        function showSuccess(msg) {
+            successMessage.textContent = msg;
+            successMessage.classList.add('show');
+            setTimeout(() => successMessage.classList.remove('show'), 5000);
+        }
+
+        // Charger historique au démarrage
+        updateAlertHistory();
+    </script>
+</body>
+</html>

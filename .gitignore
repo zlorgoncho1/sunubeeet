@@ -1,41 +1,217 @@
-# CLAUDE.md
-*CLAUDE.md
-# Logs
-*.log
-# Frontend dependencies
+# Root .gitignore pour Sunubeeet
+
+# ==============================================================================
+# FRONTEND (Vue/React)
+# ==============================================================================
 frontend/node_modules/
-frontend/.next/
+frontend/dist/
+frontend/.vscode/
+frontend/.idea/
+frontend/*.log
 frontend/.env.local
 frontend/.env.*.local
-frontend/out.html
-# Backend dependencies
-backend/api/vendor/
-backend/api/.env.local
-backend/api/storage/logs/
+frontend/coverage/
+frontend/build/
+
+# ==============================================================================
+# BACKEND (Laravel)
+# ==============================================================================
+backend/vendor/
+backend/.env
+backend/.env.*.local
+backend/storage/logs/
+backend/storage/cache/
+backend/bootstrap/cache/
+backend/node_modules/
+backend/public/storage/
+backend/.vscode/
+backend/.idea/
+backend/composer.lock
+backend/package-lock.json
+backend/coverage/
+backend/.phpunit.result.cache
+
+# ==============================================================================
+# ML (Python)
+# ==============================================================================
+ml/__pycache__/
+ml/*.py[cod]
+ml/.env
+ml/venv/
+ml/env/
+ml/virtualenv/
+ml/.pytest_cache/
+ml/.coverage
+ml/htmlcov/
+ml/*.log
+ml/test_*.py
+ml/*_test.py
+ml/logs/
+ml/.vscode/
+ml/.idea/
+ml/.ipynb_checkpoints/
+ml/*.cache
+ml/dist/
+ml/build/
+ml/*.egg-info/
+
+# ==============================================================================
+# BI (Business Intelligence)
+# ==============================================================================
+bi/node_modules/
+bi/dist/
+bi/.env.local
+bi/coverage/
+
+# ==============================================================================
+# INFRA (Infrastructure/DevOps)
+# ==============================================================================
+infra/node_modules/
+infra/.env
+infra/.terraform/
+infra/*.tfstate*
+infra/.vscode/
+infra/.idea/
+
+# ==============================================================================
+# LLM-GATEWAY
+# ==============================================================================
+llm-gateway/__pycache__/
+llm-gateway/venv/
+llm-gateway/.env
+llm-gateway/*.log
+
+# ==============================================================================
+# PROMPT (Documentation/Prompts)
+# ==============================================================================
+prompt/.vscode/
+prompt/.idea/
+
+# ==============================================================================
+# SYSTÈME D'EXPLOITATION & IDE
+# ==============================================================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
 # IDE
-.idea/
 .vscode/
+.idea/
 *.swp
 *.swo
 *~
-# OS
-.DS_Store
-Thumbs.db
-# Build outputs
+*.sublime-workspace
+*.sublime-project
+
+# OS Temp
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# ==============================================================================
+# GIT & VCS
+# ==============================================================================
+.git/
+.gitmodules
+*.patch
+*.diff
+
+# ==============================================================================
+# ARCHIVES
+# ==============================================================================
+*.zip
+*.rar
+*.7z
+*.tar.gz
+*.tar.bz2
+
+# ==============================================================================
+# DATABASES (LOCAL DEV ONLY)
+# ==============================================================================
+*.db
+*.sqlite
+*.sqlite3
+*.sql
+db.sqlite3
+
+# ==============================================================================
+# SECRETS (VERY IMPORTANT!)
+# ==============================================================================
+.env
+.env.*.local
+!.env.example
+secrets/
+.secrets/
+*.key
+*.pem
+*.pub
+
+# ==============================================================================
+# RUNTIME & TEMP
+# ==============================================================================
+*.pid
+*.seed
+*.pid.lock
+.cache/
+.tmp/
+temp/
+*.lock
+
+# ==============================================================================
+# IDE-SPECIFIC
+# ==============================================================================
+# VS Code
+.vscode/
+*.code-workspace
+
+# JetBrains
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Sublime
+.sublime-project
+.sublime-workspace
+
+# Vim
+.vim/
+*.swp
+*.swo
+
+# ==============================================================================
+# BUILD ARTIFACTS
+# ==============================================================================
 dist/
 build/
-# Environment files
-.env
-.env.local
-.env.dev
-.env.prod
-.env.*.local
-!.env.dev.example
-!.env.prod.example
-# Test coverage
-coverage/
-# Cache directories
-.cache/
-# AI/ML models
-ml/models/
-ml/data/
+*.egg-info/
+__pycache__/
+node_modules/
+vendor/
+composer.lock
+package-lock.json
+yarn.lock
+
+# ==============================================================================
+# DOCKER
+# ==============================================================================
+.dockerignore
+Dockerfile
+docker-compose.override.yml
+.docker/
+.dockercontainerid
+
+# ==============================================================================
+# LOGS & DEBUG
+# ==============================================================================
+*.log
+logs/
+*.out
+debug/
+core
