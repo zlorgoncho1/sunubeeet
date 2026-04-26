@@ -1,0 +1,72 @@
+# syntax=docker/dockerfile:1.7
+#
+# nginx-edge : seul point d'entrée prod (port 80).
+# Multi-stage qui :
+#   1. installe les deps npm
+#   2. build le static Next.js (output: 'export') → /out
+#   3. copie /out dans nginx + applique nginx.prod.conf
+#
+# Le build Next.js est fait ICI (pas dans un service compose séparé) pour
+# éviter le couplage inter-image (`FROM bet/frontend:latest` ne fonctionne
+# pas tel quel : Docker tente de puller depuis un registry).
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Stage 1 — deps
+# ─────────────────────────────────────────────────────────────────────────────
+FROM node:20-alpine AS deps
+
+WORKDIR /app
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci --no-audit --prefer-offline
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Stage 2 — builder : produit /app/out
+# ─────────────────────────────────────────────────────────────────────────────
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Build args inlinés au moment du `next build` (NEXT_PUBLIC_*)
+ARG NEXT_PUBLIC_API_URL=/api/v1
+ARG NEXT_PUBLIC_MAPBOX_TOKEN=
+ARG NEXT_PUBLIC_REVERB_APP_KEY=
+ARG NEXT_PUBLIC_REVERB_HOST=
+ARG NEXT_PUBLIC_REVERB_PORT=80
+ARG NEXT_PUBLIC_REVERB_SCHEME=ws
+ARG NEXT_PUBLIC_POLL_INTERVAL_MS=5000
+ARG NEXT_PUBLIC_DEFAULT_LAT=14.6928
+ARG NEXT_PUBLIC_DEFAULT_LNG=-17.4467
+
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL} \
+    NEXT_PUBLIC_MAPBOX_TOKEN=${NEXT_PUBLIC_MAPBOX_TOKEN} \
+    NEXT_PUBLIC_REVERB_APP_KEY=${NEXT_PUBLIC_REVERB_APP_KEY} \
+    NEXT_PUBLIC_REVERB_HOST=${NEXT_PUBLIC_REVERB_HOST} \
+    NEXT_PUBLIC_REVERB_PORT=${NEXT_PUBLIC_REVERB_PORT} \
+    NEXT_PUBLIC_REVERB_SCHEME=${NEXT_PUBLIC_REVERB_SCHEME} \
+    NEXT_PUBLIC_POLL_INTERVAL_MS=${NEXT_PUBLIC_POLL_INTERVAL_MS} \
+    NEXT_PUBLIC_DEFAULT_LAT=${NEXT_PUBLIC_DEFAULT_LAT} \
+    NEXT_PUBLIC_DEFAULT_LNG=${NEXT_PUBLIC_DEFAULT_LNG} \
+    NEXT_TELEMETRY_DISABLED=1
+
+COPY --from=deps /app/node_modules ./node_modules
+COPY frontend ./
+
+RUN npm run build
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Stage 3 — runtime : nginx-alpine + static + conf
+# ─────────────────────────────────────────────────────────────────────────────
+FROM nginx:1.27-alpine
+
+# User non-privilégié pour les workers (nginx maître reste root pour bind :80)
+RUN adduser -D -H -u 1001 -s /sbin/nologin nginxapp
+
+COPY --from=builder /app/out                         /usr/share/nginx/html
+COPY infra/docker/nginx/nginx.prod.conf              /etc/nginx/conf.d/default.conf
+
+HEALTHCHECK --interval=15s --timeout=3s --start-period=20s --retries=5 \
+    CMD wget -qO- http://127.0.0.1/up >/dev/null 2>&1 || exit 1
+
+EXPOSE 80
