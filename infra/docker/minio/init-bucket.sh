@@ -65,3 +65,10 @@ mc cors set "$ALIAS/$BUCKET" /tmp/cors.json >/dev/null 2>&1 || \
     echo "[minio-init] ⚠ CORS non appliqué (ok si version mc le supporte pas)"
 
 echo "[minio-init] OK — bucket $BUCKET prêt (privé, lifecycle 7j sur originals/)"
+
+# Reste alive en idle. Évite que les plateformes (Coolify, certains
+# orchestrateurs) qui ignorent `restart: "no"` ne relancent ce one-shot
+# en boucle infinie. Coût mémoire négligeable (~1 MB).
+# `exec` remplace le process pour qu'un signal SIGTERM termine proprement.
+echo "[minio-init] init terminé — process en idle pour rester healthy."
+exec tail -f /dev/null

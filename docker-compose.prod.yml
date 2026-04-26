@@ -91,10 +91,10 @@ services:
     networks: [bet]
     restart: unless-stopped
 
-  # Image custom basée sur minio/mc avec init-bucket.sh COPY'd dedans :
-  # évite le bug du bind-mount mono-fichier (Docker crée un dossier vide
-  # côté container si le source path n'est pas correctement résolu au boot,
-  # produisant /init-bucket.sh: Is a directory).
+  # Image custom basée sur minio/mc avec init-bucket.sh COPY'd dedans.
+  # Le script reste alive après l'init (tail -f /dev/null) pour éviter les
+  # restart loops sur les plateformes qui ignorent `restart: "no"` (Coolify,
+  # certains orchestrateurs). Coût : ~1 MB RAM idle.
   minio-init:
     build:
       context: ./infra/docker/minio
@@ -109,7 +109,7 @@ services:
       MINIO_BUCKET:        ${AWS_BUCKET}
       MINIO_CORS_ORIGIN:   ${MINIO_CORS_ORIGIN:-http://localhost}
     networks: [bet]
-    restart: "no"
+    restart: unless-stopped
 
   # ───────────────────────────────────────────────────────────────────────────
   # Backend — image unique, 3 commandes
@@ -137,7 +137,7 @@ services:
     depends_on:
       postgres:   { condition: service_healthy }
       redis:      { condition: service_healthy }
-      minio-init: { condition: service_completed_successfully }
+      minio-init: { condition: service_started }
     networks: [bet]
     restart: unless-stopped
     healthcheck:

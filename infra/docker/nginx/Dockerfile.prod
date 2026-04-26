@@ -52,6 +52,27 @@ ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL} \
 COPY --from=deps /app/node_modules ./node_modules
 COPY frontend ./
 
+# Diagnostic des NEXT_PUBLIC_* CRITIQUES au build (visible dans les logs CI/CD).
+# Si NEXT_PUBLIC_MAPBOX_TOKEN est vide ici, la carte Mapbox plantera au runtime
+# avec "An API access token is required to use Mapbox GL".
+# Causes fréquentes :
+#   - Sur Coolify : la var doit être marquée "Build Variable" (pas "Runtime only")
+#   - Build cache stale : le build ré-utilise une couche faite quand le token
+#     était vide → re-déployer en forçant --no-cache
+RUN set -eu; \
+    if [ -z "${NEXT_PUBLIC_MAPBOX_TOKEN:-}" ]; then \
+        echo "═══════════════════════════════════════════════════════════════"; \
+        echo "⚠  NEXT_PUBLIC_MAPBOX_TOKEN VIDE au moment du `next build`"; \
+        echo "   → la carte Mapbox ne s'affichera pas en runtime."; \
+        echo "   → Vérifier la config Coolify : variable doit être"; \
+        echo "     marquée 'Build & Runtime' (pas 'Runtime only')."; \
+        echo "   → Si la var a été ajoutée APRÈS un premier build,"; \
+        echo "     forcer un rebuild sans cache."; \
+        echo "═══════════════════════════════════════════════════════════════"; \
+    else \
+        echo "✓ NEXT_PUBLIC_MAPBOX_TOKEN présent (longueur=${#NEXT_PUBLIC_MAPBOX_TOKEN})"; \
+    fi
+
 RUN npm run build
 
 

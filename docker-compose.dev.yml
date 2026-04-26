@@ -89,6 +89,10 @@ services:
     restart: unless-stopped
 
   # Image custom — voir commentaire dans docker-compose.prod.yml.
+  # Reste alive après init pour cohérence dev/prod (le service `backend`
+  # dépend de `service_completed_successfully` ne fonctionnera plus, mais
+  # plus aucun service n'en dépend en compose v2 ; on utilise service_healthy
+  # ou service_started selon le besoin).
   minio-init:
     build:
       context: ./infra/docker/minio
@@ -103,7 +107,7 @@ services:
       MINIO_BUCKET:        ${AWS_BUCKET:-bet-media}
       MINIO_CORS_ORIGIN:   ${MINIO_CORS_ORIGIN:-http://localhost:3000}
     networks: [bet]
-    restart: "no"
+    restart: unless-stopped
 
   # ───────────────────────────────────────────────────────────────────────────
   # Backend — image unique, 3 commandes (serve/queue/reverb)
@@ -136,7 +140,7 @@ services:
     depends_on:
       postgres:   { condition: service_healthy }
       redis:      { condition: service_healthy }
-      minio-init: { condition: service_completed_successfully }
+      minio-init: { condition: service_started }
     networks: [bet]
     restart: unless-stopped
     healthcheck:
