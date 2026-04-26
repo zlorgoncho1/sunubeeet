@@ -91,8 +91,14 @@ services:
     networks: [bet]
     restart: unless-stopped
 
+  # Image custom basée sur minio/mc avec init-bucket.sh COPY'd dedans :
+  # évite le bug du bind-mount mono-fichier (Docker crée un dossier vide
+  # côté container si le source path n'est pas correctement résolu au boot,
+  # produisant /init-bucket.sh: Is a directory).
   minio-init:
-    image: minio/mc:latest
+    build:
+      context: ./infra/docker/minio
+    image: bet/minio-init:latest
     depends_on:
       minio:
         condition: service_healthy
@@ -102,9 +108,6 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
       MINIO_BUCKET:        ${AWS_BUCKET}
       MINIO_CORS_ORIGIN:   ${MINIO_CORS_ORIGIN:-http://localhost}
-    entrypoint: ["/bin/sh", "/init-bucket.sh"]
-    volumes:
-      - ./infra/docker/minio/init-bucket.sh:/init-bucket.sh:ro
     networks: [bet]
     restart: "no"
 

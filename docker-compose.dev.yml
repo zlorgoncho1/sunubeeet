@@ -88,8 +88,11 @@ services:
     networks: [bet]
     restart: unless-stopped
 
+  # Image custom — voir commentaire dans docker-compose.prod.yml.
   minio-init:
-    image: minio/mc:latest
+    build:
+      context: ./infra/docker/minio
+    image: bet/minio-init:dev
     depends_on:
       minio:
         condition: service_healthy
@@ -99,9 +102,6 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
       MINIO_BUCKET:        ${AWS_BUCKET:-bet-media}
       MINIO_CORS_ORIGIN:   ${MINIO_CORS_ORIGIN:-http://localhost:3000}
-    entrypoint: ["/bin/sh", "/init-bucket.sh"]
-    volumes:
-      - ./infra/docker/minio/init-bucket.sh:/init-bucket.sh:ro
     networks: [bet]
     restart: "no"
 
