@@ -1,0 +1,1050 @@
+{
+  "info": {
+    "name": "Bët API — JOJ Dakar 2026",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url",         "value": "http://localhost:8000/api/v1" },
+    { "key": "access_token",     "value": "" },
+    { "key": "qr_code_id",       "value": "" },
+    { "key": "qr_token",         "value": "" },
+    { "key": "scan_session",     "value": "" },
+    { "key": "tracking_token",   "value": "" },
+    { "key": "alerte_id",        "value": "" },
+    { "key": "incident_id",      "value": "" },
+    { "key": "mission_id",       "value": "" },
+    { "key": "user_id",          "value": "" },
+    { "key": "zone_id",          "value": "" },
+    { "key": "site_id",          "value": "" },
+    { "key": "media_id",         "value": "" }
+  ],
+  "item": [
+
+    {
+      "name": "01 — Auth",
+      "item": [
+        {
+          "name": "Login (coordinator)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data.access_token) {",
+                  "  pm.collectionVariables.set('access_token', res.data.access_token);",
+                  "  console.log('Token sauvegardé');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/auth/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+221771000001\",\n  \"password\": \"Coord123!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login (super_admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data.access_token) {",
+                  "  pm.collectionVariables.set('access_token', res.data.access_token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/auth/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+221700000001\",\n  \"password\": \"SuperAdmin123!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login (agent)",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/auth/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+221772000001\",\n  \"password\": \"Agent123!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Inscription spectateur",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/auth/spectator/register",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullname\": \"Fatou Sall\",\n  \"phone\": \"+221770000099\",\n  \"password\": \"Spectateur1!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Vérifier téléphone (OTP)",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/auth/spectator/verify-phone",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+221770000099\",\n  \"otp\": \"123456\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Refresh token",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/auth/refresh",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/auth/logout",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        },
+        {
+          "name": "Mot de passe oublié",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/auth/password/forgot",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+221771000001\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Réinitialiser mot de passe",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/auth/password/reset",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+221771000001\",\n  \"otp\": \"123456\",\n  \"password\": \"NouveauMdp1!\",\n  \"password_confirmation\": \"NouveauMdp1!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Changer mot de passe",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/auth/password/change",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"current_password\": \"Coord123!\",\n  \"password\": \"NouveauMdp1!\",\n  \"password_confirmation\": \"NouveauMdp1!\"\n}"
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "02 — Zones (admin)",
+      "item": [
+        {
+          "name": "Lister les zones",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/zones",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        },
+        {
+          "name": "Créer une zone",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data) pm.collectionVariables.set('zone_id', res.data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/zones",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Entrée Nord\",\n  \"parent_id\": null,\n  \"latitude\": 14.7453,\n  \"longitude\": -17.4660,\n  \"description\": \"Entrée principale nord de Dakar Arena\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Modifier une zone",
+          "request": {
+            "method": "PATCH",
+            "url": "{{base_url}}/zones/{{zone_id}}",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Description mise à jour\"\n}"
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "03 — QR Codes (admin)",
+      "item": [
+        {
+          "name": "Lister les QR codes",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/qr-codes?is_active=false",
+              "query": [{ "key": "is_active", "value": "false" }]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        },
+        {
+          "name": "Créer un QR code",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data) {",
+                  "  pm.collectionVariables.set('qr_code_id', res.data.id);",
+                  "  pm.collectionVariables.set('qr_token', res.data.scan_url.split('/q/')[1] || '');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/qr-codes",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"location_label\": \"Entrée Nord — Dakar Arena\",\n  \"latitude\": 14.7453,\n  \"longitude\": -17.4660,\n  \"expires_at\": \"2026-08-15\",\n  \"zone_id\": null,\n  \"description\": \"Pilier gauche entrée nord\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Créer QR codes en batch",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/qr-codes/batch",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expires_at\": \"2026-08-15\",\n  \"items\": [\n    { \"location_label\": \"Entrée Sud\",  \"latitude\": 14.7440, \"longitude\": -17.4650 },\n    { \"location_label\": \"Tribune Est\",  \"latitude\": 14.7460, \"longitude\": -17.4670 },\n    { \"location_label\": \"Tribune Ouest\", \"latitude\": 14.7445, \"longitude\": -17.4680 }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Activer un QR code",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/qr-codes/{{qr_code_id}}/activate",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        },
+        {
+          "name": "Désactiver un QR code",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/qr-codes/{{qr_code_id}}/deactivate",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        },
+        {
+          "name": "Rotation du token QR",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/qr-codes/{{qr_code_id}}/rotate",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        },
+        {
+          "name": "Modifier un QR code",
+          "request": {
+            "method": "PATCH",
+            "url": "{{base_url}}/qr-codes/{{qr_code_id}}",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Pilier droit — mis à jour\"\n}"
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "04 — Flow QR (anonyme)",
+      "item": [
+        {
+          "name": "1. Scanner le QR",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data.scan_session_token) {",
+                  "  pm.collectionVariables.set('scan_session', res.data.scan_session_token);",
+                  "  console.log('Scan session sauvegardée');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/qr/scan",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{qr_token}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "2. Soumettre une alerte (QR)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data.alerte) {",
+                  "  pm.collectionVariables.set('alerte_id', res.data.alerte.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/qr/alertes",
+            "header": [
+              { "key": "Content-Type",    "value": "application/json" },
+              { "key": "X-Scan-Session",  "value": "{{scan_session}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"health\",\n  \"sub_category\": { \"type\": \"malaise\", \"details\": { \"is_conscious\": true } },\n  \"description\": \"Personne âgée en malaise près du pilier ouest\"\n}"
+            }
+          }
+        },
+        {
+          "name": "3. Attacher un numéro de téléphone",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/qr/alertes/{{alerte_id}}/attach-phone",
+            "header": [
+              { "key": "Content-Type",   "value": "application/json" },
+              { "key": "X-Scan-Session", "value": "{{scan_session}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+221771234567\"\n}"
+            }
+          }
+        },
+        {
+          "name": "4. Demander OTP pour suivi",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/qr/tracking/request-otp",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+221771234567\"\n}"
+            }
+          }
+        },
+        {
+          "name": "5. Vérifier OTP → obtenir tracking token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data.tracking_token) {",
+                  "  pm.collectionVariables.set('tracking_token', res.data.tracking_token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/qr/tracking/verify-otp",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+221771234567\",\n  \"otp\": \"123456\"\n}"
+            }
+          }
+        },
+        {
+          "name": "6. Historique de suivi",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/qr/tracking/alertes",
+            "header": [{ "key": "X-Tracking-Token", "value": "{{tracking_token}}" }]
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "05 — Flow App (spectateur connecté)",
+      "item": [
+        {
+          "name": "Soumettre une alerte (app)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data) pm.collectionVariables.set('alerte_id', res.data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/alertes",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"security\",\n  \"description\": \"Bagarre au niveau de la tribune Est\",\n  \"latitude\": 14.7460,\n  \"longitude\": -17.4670\n}"
+            }
+          }
+        },
+        {
+          "name": "Mes alertes (historique)",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/me/alertes",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        },
+        {
+          "name": "Timeline d'une alerte",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/me/alertes/{{alerte_id}}/timeline",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        },
+        {
+          "name": "Incidents à proximité (map)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/spectator/map/incidents-nearby?lat=14.7453&lng=-17.4660&radius=2000",
+              "query": [
+                { "key": "lat",    "value": "14.7453" },
+                { "key": "lng",    "value": "-17.4660" },
+                { "key": "radius", "value": "2000" }
+              ]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "06 — Sites",
+      "item": [
+        {
+          "name": "Lister les sites",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/sites",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        },
+        {
+          "name": "Sites à proximité",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/sites/nearby?lat=14.7453&lng=-17.4660&radius=2000&type=hopital,samu",
+              "query": [
+                { "key": "lat",    "value": "14.7453" },
+                { "key": "lng",    "value": "-17.4660" },
+                { "key": "radius", "value": "2000" },
+                { "key": "type",   "value": "hopital,samu" }
+              ]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        },
+        {
+          "name": "Détail d'un site",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/sites/{{site_id}}",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        },
+        {
+          "name": "Créer un site",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data) pm.collectionVariables.set('site_id', res.data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/sites",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Hôpital Principal de Dakar\",\n  \"type\": \"hopital\",\n  \"latitude\": 14.6711,\n  \"longitude\": -17.4400,\n  \"address\": \"Avenue Nelson Mandela, Dakar\",\n  \"phone\": \"+221338891010\",\n  \"description\": \"Urgences 24/7\",\n  \"is_24_7\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "Modifier un site",
+          "request": {
+            "method": "PATCH",
+            "url": "{{base_url}}/sites/{{site_id}}",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Urgences 24/7. Hélistation disponible.\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Supprimer (désactiver) un site",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/sites/{{site_id}}",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "07 — Utilisateurs (admin/coordinator)",
+      "item": [
+        {
+          "name": "Lister les agents",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/users?role=agent",
+              "query": [{ "key": "role", "value": "agent" }]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        },
+        {
+          "name": "Créer un agent",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data) pm.collectionVariables.set('user_id', res.data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/users",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullname\": \"Ibrahima Diallo\",\n  \"phone\": \"+221773000001\",\n  \"role\": \"agent\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Modifier un utilisateur",
+          "request": {
+            "method": "PATCH",
+            "url": "{{base_url}}/users/{{user_id}}",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullname\": \"Ibrahima Diallo (modifié)\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Activer un utilisateur",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/users/{{user_id}}/activate",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        },
+        {
+          "name": "Désactiver un utilisateur",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/users/{{user_id}}/deactivate",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        },
+        {
+          "name": "Reset password d'un utilisateur",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/users/{{user_id}}/reset-password",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        },
+        {
+          "name": "Historique missions d'un agent",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/users/{{user_id}}/missions-history",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "08 — Médias",
+      "item": [
+        {
+          "name": "Obtenir une URL d'upload",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data) pm.collectionVariables.set('media_id', res.data.media_id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/files/upload-url",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kind\": \"photo\",\n  \"mime_type\": \"image/jpeg\",\n  \"size_bytes\": 204800\n}"
+            }
+          }
+        },
+        {
+          "name": "Finaliser un upload",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/files/{{media_id}}/finalize",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"checksum_sha256\": \"a3f1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Obtenir URL signée",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/files/{{media_id}}/url",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "09 — Agent terrain",
+      "item": [
+        {
+          "name": "Toggle disponibilité (ON)",
+          "request": {
+            "method": "PATCH",
+            "url": "{{base_url}}/me/presence",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"available\",\n  \"latitude\": 14.7453,\n  \"longitude\": -17.4660\n}"
+            }
+          }
+        },
+        {
+          "name": "Toggle disponibilité (OFF)",
+          "request": {
+            "method": "PATCH",
+            "url": "{{base_url}}/me/presence",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"offline\",\n  \"latitude\": 14.7453,\n  \"longitude\": -17.4660\n}"
+            }
+          }
+        },
+        {
+          "name": "Mission active",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/me/missions/active",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        },
+        {
+          "name": "Incidents à proximité (map agent)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/agent/map/incidents-nearby?lat=14.7453&lng=-17.4660",
+              "query": [
+                { "key": "lat", "value": "14.7453" },
+                { "key": "lng", "value": "-17.4660" }
+              ]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        },
+        {
+          "name": "Agents à proximité (map agent)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/agent/map/agents-nearby?lat=14.7453&lng=-17.4660",
+              "query": [
+                { "key": "lat", "value": "14.7453" },
+                { "key": "lng", "value": "-17.4660" }
+              ]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        },
+        {
+          "name": "Accepter une mission",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/missions/{{mission_id}}/accept",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        },
+        {
+          "name": "Refuser une mission",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/missions/{{mission_id}}/refuse",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Déjà en intervention sur un autre incident\"\n}"
+            }
+          }
+        },
+        {
+          "name": "En route",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/missions/{{mission_id}}/on-route",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"latitude\": 14.7453,\n  \"longitude\": -17.4660\n}"
+            }
+          }
+        },
+        {
+          "name": "Sur place",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/missions/{{mission_id}}/on-site",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"latitude\": 14.7453,\n  \"longitude\": -17.4660\n}"
+            }
+          }
+        },
+        {
+          "name": "Compléter la mission",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/missions/{{mission_id}}/complete",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"note\": \"Prise en charge effectuée, patient évacué vers HPD\",\n  \"outcome\": \"resolved\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Demander un renfort",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/missions/{{mission_id}}/request-reinforcement",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"note\": \"Plusieurs victimes, besoin d'un second agent santé\"\n}"
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "10 — Coordinateur",
+      "item": [
+        {
+          "name": "Dashboard KPIs",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/dashboard/kpis",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        },
+        {
+          "name": "Incidents live",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/dashboard/incidents/live",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        },
+        {
+          "name": "Agents live (disponibles)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/dashboard/agents/live?available=true",
+              "query": [{ "key": "available", "value": "true" }]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        },
+        {
+          "name": "Lister les incidents",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/incidents?status=open",
+              "query": [{ "key": "status", "value": "open" }]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        },
+        {
+          "name": "Détail d'un incident",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/incidents/{{incident_id}}",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        },
+        {
+          "name": "Qualifier un incident",
+          "request": {
+            "method": "PATCH",
+            "url": "{{base_url}}/incidents/{{incident_id}}",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"qualified\",\n  \"severity\": \"high\",\n  \"priority\": \"p1\",\n  \"title\": \"Malaise — Entrée Nord\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Dispatcher une mission",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data) pm.collectionVariables.set('mission_id', res.data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/missions",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"incident_id\": \"{{incident_id}}\",\n  \"assigned_to_user_id\": \"{{user_id}}\",\n  \"title\": \"Prise en charge malaise Entrée Nord\",\n  \"briefing\": \"Personne âgée en malaise. Foule autour. Privilégier sortie via Entrée Est.\",\n  \"estimated_duration_minutes\": 20\n}"
+            }
+          }
+        },
+        {
+          "name": "Sites suggérés pour une mission",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/missions/{{mission_id}}/service-infos",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        },
+        {
+          "name": "Annuler une mission",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/missions/{{mission_id}}/cancel",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Fausse alerte confirmée\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Réassigner une mission",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/missions/{{mission_id}}/reassign",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assigned_to_user_id\": \"{{user_id}}\",\n  \"reason\": \"Agent initial indisponible\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Clôturer un incident",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/incidents/{{incident_id}}/close",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "11 — Audit (admin)",
+      "item": [
+        {
+          "name": "Logs d'audit",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/audit-logs",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }]
+          }
+        }
+      ]
+    }
+
+  ]
+}

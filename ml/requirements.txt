@@ -8,3 +8,4 @@ sentence-transformers>=2.7
 numpy>=1.26
 opencv-python-headless>=4.9
 gunicorn>=21.2
+
