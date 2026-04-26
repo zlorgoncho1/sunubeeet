@@ -17,7 +17,7 @@ frontend/build/
 # BACKEND (Laravel)
 # ==============================================================================
 backend/vendor/
-backend/.env
+backend/api/.env
 backend/.env.*.local
 backend/storage/logs/
 backend/storage/cache/
