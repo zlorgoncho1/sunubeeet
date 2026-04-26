@@ -6,9 +6,11 @@ use App\Models\Alerte;
 use App\Models\AgentPresence;
 use App\Models\Incident;
 use App\Models\Mission;
+use App\Models\TrackingEvent;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
@@ -93,6 +95,34 @@ class DashboardController extends Controller
             ->distinct('zone_id')
             ->count('zone_id');
 
+        // Alertes non traitées (status = received)
+        $unprocessedAlertes = Alerte::where('status', 'received')
+            ->when($zoneIds, fn($q) => $q->whereIn('zone_id', $zoneIds))
+            ->count();
+
+        // Délai moyen received → validated (alertes validées dans les dernières 24h)
+        $avgValidationTime = Alerte::whereNotNull('validated_at')
+            ->where('validated_at', '>=', now()->subDay())
+            ->when($zoneIds, fn($q) => $q->whereIn('zone_id', $zoneIds))
+            ->selectRaw('AVG(EXTRACT(EPOCH FROM (validated_at - created_at))) as avg_seconds')
+            ->value('avg_seconds') ?? 0;
+
+        // Missions sans réponse > 5 min (status = assigned, age > 5 min)
+        $missionsUnanswered = Mission::where('status', 'assigned')
+            ->where('assigned_at', '<=', now()->subMinutes(5))
+            ->when($zoneIds, function($q) use ($zoneIds) {
+                $q->whereHas('incident', fn($iq) => $iq->whereIn('zone_id', $zoneIds));
+            })
+            ->count();
+
+        // Missions terminées aujourd'hui
+        $missionsCompletedToday = Mission::where('status', 'completed')
+            ->whereDate('completed_at', now()->toDateString())
+            ->when($zoneIds, function($q) use ($zoneIds) {
+                $q->whereHas('incident', fn($iq) => $iq->whereIn('zone_id', $zoneIds));
+            })
+            ->count();
+
         return response()->json([
             'data' => [
                 'open_incidents' => $openIncidents,
@@ -100,12 +130,168 @@ class DashboardController extends Controller
                 'high_incidents' => $highIncidents,
                 'average_response_time_seconds' => round($avgResponseTime),
                 'average_resolution_time_seconds' => round($avgResolutionTime),
+                'average_validation_time_seconds' => round($avgValidationTime),
                 'active_missions' => $activeMissions,
                 'agents_available' => $availableAgents,
                 'agents_on_site' => $agentsOnSite,
                 'agents_offline' => $offlineAgents,
                 'potential_duplicates_pending' => $potentialDuplicates,
                 'hot_zones_count' => $hotZones,
+                'unprocessed_alertes' => $unprocessedAlertes,
+                'missions_unanswered_5min' => $missionsUnanswered,
+                'missions_completed_today' => $missionsCompletedToday,
+            ],
+        ]);
+    }
+
+    /**
+     * GET /v1/dashboard/timeline
+     *
+     * Chronologie des tracking_events de la journée pour la zone du
+     * coordinateur. Filtres : target_type (alerte|incident|mission),
+     * action (préfixe), limit (défaut 100, max 500).
+     */
+    public function timeline(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $zoneIds = $this->getZoneIdsForUser($user);
+
+        $limit = max(1, min(500, (int) $request->query('limit', 100)));
+        $targetType = $request->query('target_type');
+        $actionPrefix = $request->query('action');
+        $from = $request->query('from')
+            ? \Illuminate\Support\Carbon::parse($request->query('from'))
+            : now()->startOfDay();
+
+        // Pour scoper par zone, on filtre via les FK (alertes/incidents/missions
+        // qui ont un zone_id). Les events sans target_id ne sont pas filtrés.
+        $alerteIds = $zoneIds
+            ? Alerte::whereIn('zone_id', $zoneIds)->pluck('id')
+            : null;
+        $incidentIds = $zoneIds
+            ? Incident::whereIn('zone_id', $zoneIds)->pluck('id')
+            : null;
+        $missionIds = $zoneIds
+            ? Mission::whereHas('incident', fn ($q) => $q->whereIn('zone_id', $zoneIds))->pluck('id')
+            : null;
+
+        $events = TrackingEvent::with('actor:id,fullname,role')
+            ->where('created_at', '>=', $from)
+            ->when($targetType, fn ($q) => $q->where('target_type', $targetType))
+            ->when($actionPrefix, fn ($q) => $q->where('action', 'like', $actionPrefix.'%'))
+            ->when($zoneIds !== null, function ($q) use ($alerteIds, $incidentIds, $missionIds) {
+                $q->where(function ($qq) use ($alerteIds, $incidentIds, $missionIds) {
+                    $qq->where(fn ($w) => $w->where('target_type', 'alerte')->whereIn('target_id', $alerteIds))
+                       ->orWhere(fn ($w) => $w->where('target_type', 'incident')->whereIn('target_id', $incidentIds))
+                       ->orWhere(fn ($w) => $w->where('target_type', 'mission')->whereIn('target_id', $missionIds));
+                });
+            })
+            ->orderByDesc('created_at')
+            ->limit($limit)
+            ->get();
+
+        return response()->json([
+            'data' => $events->map(fn ($e) => [
+                'id' => $e->id,
+                'target_type' => $e->target_type,
+                'target_id' => $e->target_id,
+                'action' => $e->action,
+                'from_status' => $e->from_status,
+                'to_status' => $e->to_status,
+                'actor' => $e->actor ? [
+                    'id' => $e->actor->id,
+                    'fullname' => $e->actor->fullname,
+                    'role' => $e->actor->role,
+                ] : null,
+                'note' => $e->note,
+                'created_at' => $e->created_at,
+            ]),
+            'meta' => [
+                'count' => $events->count(),
+                'limit' => $limit,
+                'from' => $from->toIso8601String(),
+            ],
+        ]);
+    }
+
+    /**
+     * GET /v1/dashboard/shift-report
+     *
+     * Synthèse du shift (depuis 00:00 par défaut) : alertes reçues / validées
+     * / fausses, incidents ouverts / résolus, missions, délai médian.
+     */
+    public function shiftReport(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $zoneIds = $this->getZoneIdsForUser($user);
+
+        $from = $request->query('from')
+            ? \Illuminate\Support\Carbon::parse($request->query('from'))
+            : now()->startOfDay();
+        $to = $request->query('to')
+            ? \Illuminate\Support\Carbon::parse($request->query('to'))
+            : now();
+
+        $alerteScope = Alerte::whereBetween('created_at', [$from, $to])
+            ->when($zoneIds, fn ($q) => $q->whereIn('zone_id', $zoneIds));
+
+        $incidentScope = Incident::whereBetween('created_at', [$from, $to])
+            ->when($zoneIds, fn ($q) => $q->whereIn('zone_id', $zoneIds));
+
+        $missionScope = Mission::whereBetween('created_at', [$from, $to])
+            ->when($zoneIds, function ($q) use ($zoneIds) {
+                $q->whereHas('incident', fn ($iq) => $iq->whereIn('zone_id', $zoneIds));
+            });
+
+        $alertes = [
+            'total' => (clone $alerteScope)->count(),
+            'received' => (clone $alerteScope)->where('status', 'received')->count(),
+            'validated' => (clone $alerteScope)->where('status', 'validated')->count(),
+            'duplicate' => (clone $alerteScope)->where('status', 'duplicate')->count(),
+            'false_alert' => (clone $alerteScope)->where('status', 'false_alert')->count(),
+            'rejected' => (clone $alerteScope)->where('status', 'rejected')->count(),
+        ];
+
+        $byCategory = (clone $alerteScope)
+            ->selectRaw('category, COUNT(*) as n')
+            ->groupBy('category')
+            ->pluck('n', 'category')
+            ->toArray();
+
+        $incidents = [
+            'created' => (clone $incidentScope)->count(),
+            'resolved' => (clone $incidentScope)->whereIn('status', ['resolved', 'closed'])->count(),
+            'cancelled' => (clone $incidentScope)->where('status', 'cancelled')->count(),
+            'still_open' => (clone $incidentScope)
+                ->whereIn('status', ['open', 'qualified', 'mission_assigned', 'in_progress'])
+                ->count(),
+        ];
+
+        $missions = [
+            'created' => (clone $missionScope)->count(),
+            'completed' => (clone $missionScope)->where('status', 'completed')->count(),
+            'cancelled' => (clone $missionScope)->where('status', 'cancelled')->count(),
+            'refused' => (clone $missionScope)->where('status', 'refused')->count(),
+        ];
+
+        // Délai médian validation (alertes validées dans la fenêtre)
+        $medianValidation = (clone $alerteScope)
+            ->whereNotNull('validated_at')
+            ->selectRaw("PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (validated_at - created_at))) as med")
+            ->value('med');
+
+        return response()->json([
+            'data' => [
+                'window' => [
+                    'from' => $from->toIso8601String(),
+                    'to' => $to->toIso8601String(),
+                    'duration_hours' => round($to->diffInMinutes($from) / 60, 1),
+                ],
+                'alertes' => $alertes,
+                'alertes_by_category' => $byCategory,
+                'incidents' => $incidents,
+                'missions' => $missions,
+                'median_validation_seconds' => $medianValidation !== null ? round($medianValidation, 1) : null,
             ],
         ]);
     }
