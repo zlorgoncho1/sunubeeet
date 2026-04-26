@@ -4,6 +4,19 @@ Endpoints REST pour les dashboards admin et coordinateur. Ajout de la branche
 `business-intelligence` au-dessus du `Coordinator/DashboardController` existant
 et d'un `Admin/DashboardController` non encore branché.
 
+## Doc OpenAPI / Swagger
+
+- **Spec OpenAPI 3.0.3** : [`openapi-bi.yaml`](openapi-bi.yaml) — source unique
+  pour les contrats. Le frontend peut générer ses types TypeScript en une
+  commande :
+  ```bash
+  npx openapi-typescript backend/api/docs/openapi-bi.yaml -o frontend/src/lib/types/bi.d.ts
+  ```
+- **Swagger UI standalone** : ouvrir [`swagger-bi.html`](swagger-bi.html)
+  directement dans le navigateur (file://). Charge le YAML local, supporte
+  le « Try it out » avec un JWT collé dans **Authorize**. Aucune dépendance
+  composer requise (CDN jsdelivr).
+
 Tous les endpoints renvoient `{ "data": ... }` (et `meta` si pagination).
 PostgreSQL only — utilise `DATE_TRUNC`, `EXTRACT(EPOCH FROM ...)`,
 `PERCENTILE_CONT`. Toutes les requêtes lourdes sont mises en cache (TTL 60 s

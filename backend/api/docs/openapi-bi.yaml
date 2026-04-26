@@ -1,0 +1,709 @@
+openapi: 3.0.3
+info:
+  title: Bët — API Dashboards BI
+  version: 1.0.0
+  description: |
+    Endpoints REST des dashboards Admin et Coordinateur (Business Intelligence).
+
+    - **Coordinator** (`/v1/dashboard/...`) — accès `coordinator | admin | super_admin`,
+      scoping zone pour `coordinator`, vue globale pour `admin`.
+    - **Admin** (`/v1/dashboard/admin/...`) — accès `admin | super_admin` uniquement,
+      vue globale.
+
+    Toutes les réponses suivent l'enveloppe `{ data: ..., meta?: {...} }`.
+
+servers:
+  - url: http://localhost:8000/api
+    description: Local dev
+  - url: http://backend:8000/api
+    description: Docker compose interne
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Coordinator Dashboard
+    description: KPIs temps réel + triage opérationnel pour le PC coordinateur.
+  - name: Admin Dashboard
+    description: KPIs globaux + analytics pour la supervision projet.
+
+paths:
+
+  # ─── Coordinator ─────────────────────────────────────────────────────────
+
+  /v1/dashboard/kpis:
+    get:
+      tags: [Coordinator Dashboard]
+      summary: KPIs temps réel
+      description: |
+        15 KPIs scopés sur la zone du coordinateur (admin = global). Inclut
+        les métriques étendues : `average_validation_time_seconds`,
+        `unprocessed_alertes`, `missions_unanswered_5min`,
+        `missions_completed_today`.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/CoordinatorKpis' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /v1/dashboard/incidents/live:
+    get:
+      tags: [Coordinator Dashboard]
+      summary: Incidents actifs (live)
+      description: 50 derniers incidents non clos pour la zone du coordinateur.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/IncidentLive' }
+
+  /v1/dashboard/agents/live:
+    get:
+      tags: [Coordinator Dashboard]
+      summary: Agents et présence (live)
+      description: |
+        Tous les agents actifs de la zone avec leur `effective_status` calculé
+        (combine la présence et la mission active).
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/AgentLive' }
+
+  /v1/dashboard/alertes/pending-duplicates:
+    get:
+      tags: [Coordinator Dashboard]
+      summary: Alertes doublons à arbitrer
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, default: 1, minimum: 1 }
+        - in: query
+          name: per_page
+          schema: { type: integer, default: 20, minimum: 1, maximum: 100 }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/AlertePendingDuplicate' }
+                  meta: { $ref: '#/components/schemas/PaginationMeta' }
+
+  /v1/dashboard/timeline:
+    get:
+      tags: [Coordinator Dashboard]
+      summary: Chronologie tracking_events
+      description: |
+        Tracking events de la fenêtre, scopés par zone du coordinateur.
+        Filtrable par `target_type` et préfixe d'`action`.
+      parameters:
+        - in: query
+          name: target_type
+          schema: { type: string, enum: [alerte, incident, mission] }
+        - in: query
+          name: action
+          schema: { type: string }
+          description: Préfixe (ex `mission.`, `incident.qualified`).
+        - in: query
+          name: from
+          schema: { type: string, format: date-time }
+          description: Défaut `today 00:00`.
+        - in: query
+          name: limit
+          schema: { type: integer, default: 100, minimum: 1, maximum: 500 }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/TimelineEvent' }
+                  meta:
+                    type: object
+                    properties:
+                      count: { type: integer }
+                      limit: { type: integer }
+                      from: { type: string, format: date-time }
+
+  /v1/dashboard/shift-report:
+    get:
+      tags: [Coordinator Dashboard]
+      summary: Synthèse de shift
+      description: |
+        Compteurs et délai médian sur une fenêtre. Par défaut depuis
+        `today 00:00` jusqu'à maintenant.
+      parameters:
+        - in: query
+          name: from
+          schema: { type: string, format: date-time }
+        - in: query
+          name: to
+          schema: { type: string, format: date-time }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/ShiftReport' }
+
+  # ─── Admin ───────────────────────────────────────────────────────────────
+
+  /v1/dashboard/admin/kpis:
+    get:
+      tags: [Admin Dashboard]
+      summary: KPIs globaux
+      description: 8 compteurs instantanés globaux.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/AdminKpis' }
+
+  /v1/dashboard/admin/analytics/alertes-volume:
+    get:
+      tags: [Admin Dashboard]
+      summary: Volume d'alertes par jour
+      description: Volume par jour, segmenté par catégorie et source (QR vs App).
+      parameters:
+        - $ref: '#/components/parameters/RangeDays'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/AlerteVolumeResponse' }
+
+  /v1/dashboard/admin/analytics/incidents-trend:
+    get:
+      tags: [Admin Dashboard]
+      summary: Tendance incidents par semaine
+      parameters:
+        - in: query
+          name: range
+          description: Nombre de semaines (1-12).
+          schema: { type: integer, default: 8, minimum: 1, maximum: 12 }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/IncidentsTrendResponse' }
+
+  /v1/dashboard/admin/analytics/agents-performance:
+    get:
+      tags: [Admin Dashboard]
+      summary: Top agents par missions complétées
+      parameters:
+        - $ref: '#/components/parameters/RangeDays'
+        - in: query
+          name: limit
+          schema: { type: integer, default: 10, minimum: 1, maximum: 50 }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/AgentsPerformanceResponse' }
+
+  /v1/dashboard/admin/analytics/heatmap:
+    get:
+      tags: [Admin Dashboard]
+      summary: Densité GPS des alertes
+      description: |
+        Cluster GPS arrondi à `precision` décimales. precision=3 ≈ 110 m,
+        precision=2 ≈ 1.1 km. Cap dur 5 000 points retournés.
+      parameters:
+        - $ref: '#/components/parameters/RangeDays'
+        - in: query
+          name: precision
+          schema: { type: integer, default: 3, minimum: 1, maximum: 4 }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/HeatmapResponse' }
+
+  /v1/dashboard/admin/analytics/sources:
+    get:
+      tags: [Admin Dashboard]
+      summary: Répartition QR vs App
+      parameters:
+        - $ref: '#/components/parameters/RangeDays'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/SourcesBreakdown' }
+
+  /v1/dashboard/admin/analytics/processing-time:
+    get:
+      tags: [Admin Dashboard]
+      summary: Médiane et p95 du délai de validation
+      description: |
+        `created_at → validated_at` par catégorie. Cible métier :
+        `median_seconds < 300` (5 min).
+      parameters:
+        - $ref: '#/components/parameters/RangeDays'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/ProcessingTimeResponse' }
+
+  /v1/dashboard/admin/analytics/duplicates:
+    get:
+      tags: [Admin Dashboard]
+      summary: Taux de doublons par jour
+      description: Cible < 10 %, alerte au-delà de 20 %.
+      parameters:
+        - $ref: '#/components/parameters/RangeDays'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/DuplicatesRateResponse' }
+
+  /v1/dashboard/admin/phone-tracking/stats:
+    get:
+      tags: [Admin Dashboard]
+      summary: Stats des suivis téléphoniques
+      description: Aucun numéro en clair, uniquement compteurs et ratios.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/PhoneTrackingStats' }
+
+components:
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    RangeDays:
+      in: query
+      name: range
+      description: Nombre de jours (1-90).
+      schema: { type: integer, default: 30, minimum: 1, maximum: 90 }
+
+  responses:
+    Unauthorized:
+      description: JWT manquant ou invalide.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+
+  schemas:
+
+    ErrorEnvelope:
+      type: object
+      properties:
+        message: { type: string }
+
+    PaginationMeta:
+      type: object
+      properties:
+        current_page: { type: integer }
+        per_page: { type: integer }
+        total: { type: integer }
+        last_page: { type: integer }
+
+    Category:
+      type: string
+      enum: [health, security, crowd, access_blocked, fire_danger, lost_found, logistics, transport, other]
+
+    Severity:
+      type: string
+      enum: [low, medium, high, critical]
+
+    Priority:
+      type: string
+      enum: [p1, p2, p3, p4]
+
+    IncidentStatus:
+      type: string
+      enum: [open, qualified, mission_assigned, in_progress, resolved, closed, cancelled]
+
+    AlerteStatus:
+      type: string
+      enum: [received, validated, duplicate, false_alert, rejected]
+
+    MissionStatus:
+      type: string
+      enum: [created, assigned, accepted, refused, on_route, on_site, completed, cancelled]
+
+    EffectiveAgentStatus:
+      type: string
+      enum: [available, assigned, on_route, on_site, offline]
+
+    # ─── Coordinator schemas ──────────────────────────────────────────────
+
+    CoordinatorKpis:
+      type: object
+      required:
+        - open_incidents
+        - critical_incidents
+        - high_incidents
+        - average_response_time_seconds
+        - average_resolution_time_seconds
+        - average_validation_time_seconds
+        - active_missions
+        - agents_available
+        - agents_on_site
+        - agents_offline
+        - potential_duplicates_pending
+        - hot_zones_count
+        - unprocessed_alertes
+        - missions_unanswered_5min
+        - missions_completed_today
+      properties:
+        open_incidents: { type: integer, example: 12 }
+        critical_incidents: { type: integer, example: 2 }
+        high_incidents: { type: integer, example: 5 }
+        average_response_time_seconds:
+          type: integer
+          description: Délai moyen `created_at → qualified_at`.
+          example: 142
+        average_resolution_time_seconds:
+          type: integer
+          description: Délai moyen `created_at → resolved_at`.
+          example: 1850
+        average_validation_time_seconds:
+          type: integer
+          description: Délai moyen `created_at → validated_at` (24 dernières heures).
+          example: 38
+        active_missions: { type: integer, example: 7 }
+        agents_available: { type: integer, example: 22 }
+        agents_on_site: { type: integer, example: 4 }
+        agents_offline: { type: integer, example: 3 }
+        potential_duplicates_pending: { type: integer, example: 1 }
+        hot_zones_count: { type: integer, example: 1 }
+        unprocessed_alertes:
+          type: integer
+          description: Alertes status=`received` non triées.
+          example: 8
+        missions_unanswered_5min:
+          type: integer
+          description: Missions assignées depuis > 5 min sans réponse.
+          example: 1
+        missions_completed_today: { type: integer, example: 14 }
+
+    IncidentLive:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        reference: { type: string, example: 'IN-2026-000142' }
+        title: { type: string }
+        category: { $ref: '#/components/schemas/Category' }
+        severity: { $ref: '#/components/schemas/Severity' }
+        priority: { $ref: '#/components/schemas/Priority' }
+        status: { $ref: '#/components/schemas/IncidentStatus' }
+        latitude: { type: number, format: double }
+        longitude: { type: number, format: double }
+        alertes_count: { type: integer }
+        created_at: { type: string, format: date-time }
+
+    AgentLive:
+      type: object
+      properties:
+        agent:
+          type: object
+          properties:
+            id: { type: string, format: uuid }
+            fullname: { type: string }
+            team_type: { type: string, nullable: true }
+            phone: { type: string }
+        presence:
+          type: object
+          nullable: true
+          properties:
+            status: { type: string, enum: [available, offline] }
+            effective_status: { $ref: '#/components/schemas/EffectiveAgentStatus' }
+            latitude: { type: number, format: double, nullable: true }
+            longitude: { type: number, format: double, nullable: true }
+            battery_level: { type: integer, nullable: true, minimum: 0, maximum: 100 }
+            last_heartbeat_at: { type: string, format: date-time, nullable: true }
+        current_mission_id: { type: string, format: uuid, nullable: true }
+
+    AlertePendingDuplicate:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        reference: { type: string }
+        category: { $ref: '#/components/schemas/Category' }
+        description: { type: string, nullable: true }
+        latitude: { type: number, format: double }
+        longitude: { type: number, format: double }
+        created_at: { type: string, format: date-time }
+        duplicate_of_reference: { type: string, nullable: true }
+        source: { type: string, enum: [qr, user] }
+
+    TimelineEvent:
+      type: object
+      properties:
+        id: { type: integer }
+        target_type: { type: string, enum: [alerte, incident, mission] }
+        target_id: { type: string }
+        action: { type: string, example: 'mission.completed' }
+        from_status: { type: string, nullable: true }
+        to_status: { type: string, nullable: true }
+        actor:
+          type: object
+          nullable: true
+          properties:
+            id: { type: string, format: uuid }
+            fullname: { type: string }
+            role: { type: string }
+        note: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
+
+    ShiftReport:
+      type: object
+      properties:
+        window:
+          type: object
+          properties:
+            from: { type: string, format: date-time }
+            to: { type: string, format: date-time }
+            duration_hours: { type: number, format: float }
+        alertes:
+          type: object
+          properties:
+            total: { type: integer }
+            received: { type: integer }
+            validated: { type: integer }
+            duplicate: { type: integer }
+            false_alert: { type: integer }
+            rejected: { type: integer }
+        alertes_by_category:
+          type: object
+          additionalProperties: { type: integer }
+          example: { health: 45, security: 30, fire_danger: 5 }
+        incidents:
+          type: object
+          properties:
+            created: { type: integer }
+            resolved: { type: integer }
+            cancelled: { type: integer }
+            still_open: { type: integer }
+        missions:
+          type: object
+          properties:
+            created: { type: integer }
+            completed: { type: integer }
+            cancelled: { type: integer }
+            refused: { type: integer }
+        median_validation_seconds:
+          type: number
+          format: float
+          nullable: true
+          example: 42.5
+
+    # ─── Admin schemas ────────────────────────────────────────────────────
+
+    AdminKpis:
+      type: object
+      properties:
+        agents_active: { type: integer, example: 84 }
+        alertes_today: { type: integer, example: 412 }
+        incidents_open: { type: integer, example: 17 }
+        missions_active: { type: integer, example: 12 }
+        qr_codes_active: { type: integer, example: 320 }
+        sites_active: { type: integer, example: 28 }
+        duplicates_detected: { type: integer, example: 35 }
+        audit_logs_24h: { type: integer, example: 1245 }
+        db_driver: { type: string, example: 'pgsql' }
+
+    AlerteVolumeBucket:
+      type: object
+      properties:
+        day: { type: string, format: date }
+        total: { type: integer }
+        by_category:
+          type: object
+          additionalProperties: { type: integer }
+        by_source:
+          type: object
+          properties:
+            qr: { type: integer }
+            app: { type: integer }
+
+    AlerteVolumeResponse:
+      type: object
+      properties:
+        range_days: { type: integer }
+        buckets:
+          type: array
+          items: { $ref: '#/components/schemas/AlerteVolumeBucket' }
+
+    IncidentsTrendBucket:
+      type: object
+      properties:
+        week_start: { type: string, format: date }
+        created: { type: integer }
+        resolved: { type: integer }
+
+    IncidentsTrendResponse:
+      type: object
+      properties:
+        range_weeks: { type: integer }
+        buckets:
+          type: array
+          items: { $ref: '#/components/schemas/IncidentsTrendBucket' }
+
+    AgentPerformanceItem:
+      type: object
+      properties:
+        agent_id: { type: string, format: uuid }
+        fullname: { type: string }
+        missions_assigned: { type: integer }
+        missions_completed: { type: integer }
+        missions_refused: { type: integer }
+        completion_rate: { type: number, format: float, minimum: 0, maximum: 1 }
+        avg_on_site_minutes: { type: number, format: float, nullable: true }
+
+    AgentsPerformanceResponse:
+      type: object
+      properties:
+        range_days: { type: integer }
+        agents:
+          type: array
+          items: { $ref: '#/components/schemas/AgentPerformanceItem' }
+
+    HeatmapPoint:
+      type: object
+      properties:
+        lat: { type: number, format: double }
+        lng: { type: number, format: double }
+        intensity: { type: integer }
+
+    HeatmapResponse:
+      type: object
+      properties:
+        range_days: { type: integer }
+        precision: { type: integer }
+        points:
+          type: array
+          items: { $ref: '#/components/schemas/HeatmapPoint' }
+
+    SourcesBreakdown:
+      type: object
+      properties:
+        range_days: { type: integer }
+        qr: { type: integer }
+        app: { type: integer }
+        total: { type: integer }
+        qr_share: { type: number, format: float }
+        app_share: { type: number, format: float }
+
+    ProcessingTimeCategory:
+      type: object
+      properties:
+        category: { $ref: '#/components/schemas/Category' }
+        count: { type: integer }
+        median_seconds: { type: number, format: float, nullable: true }
+        p95_seconds: { type: number, format: float, nullable: true }
+
+    ProcessingTimeResponse:
+      type: object
+      properties:
+        range_days: { type: integer }
+        target_median_seconds: { type: integer, example: 300 }
+        by_category:
+          type: array
+          items: { $ref: '#/components/schemas/ProcessingTimeCategory' }
+
+    DuplicatesRateBucket:
+      type: object
+      properties:
+        day: { type: string, format: date }
+        total: { type: integer }
+        duplicates: { type: integer }
+        rate: { type: number, format: float }
+
+    DuplicatesRateResponse:
+      type: object
+      properties:
+        range_days: { type: integer }
+        overall_rate: { type: number, format: float }
+        target_max_rate: { type: number, format: float, example: 0.10 }
+        alert_threshold: { type: number, format: float, example: 0.20 }
+        buckets:
+          type: array
+          items: { $ref: '#/components/schemas/DuplicatesRateBucket' }
+
+    PhoneTrackingStats:
+      type: object
+      properties:
+        total_inserts: { type: integer }
+        verified: { type: integer }
+        active: { type: integer }
+        expiring_in_7_days: { type: integer }
+        expired: { type: integer }
+        verification_rate: { type: number, format: float }
+        alertes_with_tracking: { type: integer }
